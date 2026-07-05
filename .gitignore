@@ -1,0 +1,8 @@
+.venv
+chroma_db/*
+data/engineering
+data/general
+data/hr
+data/marketing
+.env
+.env.example
