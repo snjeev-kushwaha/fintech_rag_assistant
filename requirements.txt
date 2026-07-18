@@ -27,3 +27,6 @@ langchain-text-splitters==0.3.3
 # Frontend
 streamlit==1.41.1
 requests==2.32.3
+
+# Database
+pymongo==4.10.1

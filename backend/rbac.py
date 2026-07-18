@@ -5,6 +5,7 @@ Role-Based Access Control — Collection Permission Mapping
 
 from functools import wraps
 from typing import Callable
+# pyrefly: ignore [missing-import]
 from fastapi import HTTPException, status
 
 from backend.models import UserRole

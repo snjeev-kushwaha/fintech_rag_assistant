@@ -8,9 +8,9 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-import chromadb
-from chromadb.config import Settings as ChromaSettings
-from sentence_transformers import SentenceTransformer
+import chromadb  # pyrefly: ignore [missing-import]
+from chromadb.config import Settings as ChromaSettings  # pyrefly: ignore [missing-import]
+from sentence_transformers import SentenceTransformer  # pyrefly: ignore [missing-import]
 
 from backend.config import settings, CHROMA_DIR, DATA_DIR
 

@@ -17,6 +17,7 @@ class UserRole(str, Enum):
     ENGINEERING = "engineering"
     EXECUTIVE = "executive"
     EMPLOYEE = "employee"
+    ROOT = "root"
 
 
 ROLE_DISPLAY_NAMES = {
@@ -26,6 +27,7 @@ ROLE_DISPLAY_NAMES = {
     UserRole.ENGINEERING: "Engineering Department",
     UserRole.EXECUTIVE: "C-Level Executive",
     UserRole.EMPLOYEE: "Employee",
+    UserRole.ROOT: "System Administrator",
 }
 
 ROLE_COLORS = {
@@ -35,6 +37,7 @@ ROLE_COLORS = {
     UserRole.ENGINEERING: "#3b82f6",   # blue
     UserRole.EXECUTIVE: "#eab308",     # gold
     UserRole.EMPLOYEE: "#94a3b8",      # slate
+    UserRole.ROOT: "#ef4444",          # red
 }
 
 ROLE_EMOJIS = {
@@ -44,10 +47,32 @@ ROLE_EMOJIS = {
     UserRole.ENGINEERING: "⚙️",
     UserRole.EXECUTIVE: "👑",
     UserRole.EMPLOYEE: "🏢",
+    UserRole.ROOT: "🔑",
 }
 
 
 # ── Request / Response Models ─────────────────────────────────────────────────
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: UserRole
+    full_name: str
+
+
+class UserUpdate(BaseModel):
+    password: Optional[str] = None
+    role: Optional[UserRole] = None
+    full_name: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserAdminResponse(BaseModel):
+    username: str
+    role: UserRole
+    full_name: str
+    is_active: bool
+
 
 class LoginRequest(BaseModel):
     username: str

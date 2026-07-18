@@ -6,3 +6,4 @@ data/hr
 data/marketing
 .env
 .env.example
+pyrightconfig.json

@@ -25,57 +25,8 @@ def verify_password(plain: str, hashed: bytes) -> bool:
     return bcrypt.checkpw(plain.encode("utf-8"), hashed)
 
 
-# ── In-Memory User Store ──────────────────────────────────────────────────────
-# In production, replace with a proper database (PostgreSQL, etc.)
-
-class User:
-    def __init__(self, username: str, password: str, role: UserRole, full_name: str):
-        self.username = username
-        self.hashed_password = hash_password(password)
-        self.role = role
-        self.full_name = full_name
-        self.is_active = True
-
-
-# Demo users for each role
-USERS_DB: dict[str, User] = {
-    "alice_finance": User(
-        username="alice_finance",
-        password="finance123",
-        role=UserRole.FINANCE,
-        full_name="Alice Fernandez",
-    ),
-    "bob_marketing": User(
-        username="bob_marketing",
-        password="marketing123",
-        role=UserRole.MARKETING,
-        full_name="Bob Chatterjee",
-    ),
-    "carol_hr": User(
-        username="carol_hr",
-        password="hr123",
-        role=UserRole.HR,
-        full_name="Carol Raj",
-    ),
-    "dave_eng": User(
-        username="dave_eng",
-        password="eng123",
-        role=UserRole.ENGINEERING,
-        full_name="Dave Pillai",
-    ),
-    "tony_cto": User(
-        username="tony_cto",
-        password="executive123",
-        role=UserRole.EXECUTIVE,
-        full_name="Tony Sharma",
-    ),
-    "employee1": User(
-        username="employee1",
-        password="employee123",
-        role=UserRole.EMPLOYEE,
-        full_name="Rohan Kumar",
-    ),
-}
+# ── Persistent User Store Integration ─────────────────────────────────────────
+from backend.users_store import get_user_by_username, UserRecord
 
 
 # ── JWT Token Operations ──────────────────────────────────────────────────────
@@ -107,8 +58,8 @@ def decode_token(token: str) -> dict:
 
 # ── User Authentication ───────────────────────────────────────────────────────
 
-def authenticate_user(username: str, password: str) -> Optional[User]:
-    user = USERS_DB.get(username)
+def authenticate_user(username: str, password: str) -> Optional[UserRecord]:
+    user = get_user_by_username(username)
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
@@ -127,7 +78,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInfo:
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    user = USERS_DB.get(username)
+    user = get_user_by_username(username)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -135,8 +86,19 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInfo:
         )
     return UserInfo(
         username=user.username,
-        role=user.role,
-        display_name=ROLE_DISPLAY_NAMES[user.role],
-        role_color=ROLE_COLORS[user.role],
-        role_emoji=ROLE_EMOJIS[user.role],
+        role=UserRole(user.role),
+        display_name=ROLE_DISPLAY_NAMES[UserRole(user.role)],
+        role_color=ROLE_COLORS[UserRole(user.role)],
+        role_emoji=ROLE_EMOJIS[UserRole(user.role)],
     )
+
+
+# ── FastAPI Dependency: Require Root/Admin Privileges ─────────────────────────
+
+def require_root(current_user: UserInfo = Depends(get_current_user)) -> UserInfo:
+    if current_user.role != UserRole.ROOT:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required (Root role is required)",
+        )
+    return current_user

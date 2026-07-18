@@ -3,12 +3,67 @@ FinSolve Technologies — RAG RBAC Chatbot
 RAG Pipeline — Retrieval + Augmented Generation
 """
 
-import google.generativeai as genai
+import requests
+import google.generativeai as genai  # pyrefly: ignore [missing-import]
 
 from backend.config import settings
 from backend.models import UserRole, SourceDocument
 from backend.rbac import get_allowed_collections, COLLECTION_LABELS
 from backend.vector_store import query_collections
+
+
+# ── LLM Provider Detection ───────────────────────────────────────────────────
+
+def detect_provider() -> str:
+    """Detect which LLM provider to use based on configuration and local availability."""
+    provider = getattr(settings, "llm_provider", "auto").lower()
+    
+    if provider == "gemini":
+        return "gemini"
+    elif provider == "ollama":
+        return "ollama"
+        
+    # "auto" detection logic
+    # 1. Check if Gemini key is set and valid
+    has_gemini = settings.gemini_api_key and "your_gemini" not in settings.gemini_api_key and settings.gemini_api_key.strip() != ""
+    
+    # 2. Check if local Ollama server is running
+    has_ollama = False
+    try:
+        res = requests.get(f"{settings.ollama_base_url.rstrip('/')}/api/tags", timeout=1.0)
+        if res.status_code == 200:
+            has_ollama = True
+    except Exception:
+        pass
+        
+    if has_gemini:
+        return "gemini"
+    elif has_ollama:
+        return "ollama"
+        
+    # Fallback to gemini if nothing is detected
+    return "gemini"
+
+
+def get_available_ollama_model() -> str:
+    """Find the first available model in local Ollama, fallback to settings."""
+    try:
+        res = requests.get(f"{settings.ollama_base_url.rstrip('/')}/api/tags", timeout=1.0)
+        if res.status_code == 200:
+            models_data = res.json()
+            models = [m["name"] for m in models_data.get("models", [])]
+            if models:
+                # If configured model is present (or starts with it), use it
+                if settings.ollama_model in models:
+                    return settings.ollama_model
+                for m in models:
+                    if m.startswith(settings.ollama_model):
+                        return m
+                # Otherwise return the first available model
+                return models[0]
+    except Exception:
+        pass
+    return settings.ollama_model
 
 
 # ── Gemini LLM Setup ──────────────────────────────────────────────────────────
@@ -73,8 +128,44 @@ class RAGPipeline:
     """
 
     def __init__(self):
-        _configure_gemini()
-        self._model = genai.GenerativeModel(settings.gemini_model)
+        # 1. Configure Gemini if API key is present
+        self.gemini_available = False
+        has_gemini_key = settings.gemini_api_key and "your_gemini" not in settings.gemini_api_key and settings.gemini_api_key.strip() != ""
+        if has_gemini_key:
+            try:
+                _configure_gemini()
+                self._gemini_model = genai.GenerativeModel(settings.gemini_model)
+                self.gemini_available = True
+            except Exception as e:
+                print(f"[RAG] Failed to configure Gemini: {e}")
+
+        # 2. Check and configure local Ollama availability
+        self.ollama_available = False
+        self.ollama_model = settings.ollama_model
+        try:
+            res = requests.get(f"{settings.ollama_base_url.rstrip('/')}/api/tags", timeout=1.0)
+            if res.status_code == 200:
+                self.ollama_available = True
+                self.ollama_model = get_available_ollama_model()
+                print(f"[RAG] Ollama is available. Resolved model: {self.ollama_model}")
+        except Exception as e:
+            print(f"[RAG] Ollama check failed: {e}")
+
+        # 3. Determine preferred provider
+        pref = getattr(settings, "llm_provider", "auto").lower()
+        if pref == "ollama":
+            self.preferred_provider = "ollama"
+        elif pref == "gemini":
+            self.preferred_provider = "gemini"
+        else: # auto
+            if self.gemini_available:
+                self.preferred_provider = "gemini"
+            elif self.ollama_available:
+                self.preferred_provider = "ollama"
+            else:
+                self.preferred_provider = "gemini"
+
+        print(f"[RAG] Active Preferred Provider: {self.preferred_provider}")
 
     def retrieve(
         self,
@@ -110,6 +201,30 @@ class RAGPipeline:
 
         return "\n".join(context_parts)
 
+    def _generate_via_ollama(self, prompt: str, query: str) -> str:
+        """Helper to invoke the local Ollama REST endpoint."""
+        try:
+            body = {
+                "model": self.ollama_model,
+                "prompt": f"{prompt}\n\nUser Question: {query}",
+                "stream": False,
+                "options": {
+                    "temperature": 0.2
+                }
+            }
+            res = requests.post(
+                f"{settings.ollama_base_url.rstrip('/')}/api/generate",
+                json=body,
+                timeout=180.0
+            )
+            res.raise_for_status()
+            return res.json()["response"]
+        except Exception as e:
+            return (
+                f"Failed to generate response using local Ollama model '{self.ollama_model}': {str(e)}\n\n"
+                "Please verify your local Docker container status."
+            )
+
     def generate(
         self,
         query: str,
@@ -118,7 +233,7 @@ class RAGPipeline:
         allowed_collections: list[str],
     ) -> str:
         """
-        Generate a response using Gemini with the retrieved context.
+        Generate a response using Gemini or local Ollama with the retrieved context.
         Returns the LLM's text response.
         """
         context = self.build_context(chunks)
@@ -129,20 +244,38 @@ class RAGPipeline:
             context=context,
         )
 
-        try:
-            response = self._model.generate_content(
-                [prompt, f"\n\nUser Question: {query}"],
-                generation_config=genai.GenerationConfig(
-                    temperature=0.2,
-                    max_output_tokens=1500,
-                ),
-            )
-            return response.text
-        except Exception as e:
-            return (
-                f"I encountered an error generating a response: {str(e)}\n\n"
-                "Please check that your Gemini API key is configured correctly in the `.env` file."
-            )
+        # Force Ollama if requested, or if Gemini is not available at all
+        use_ollama = (self.preferred_provider == "ollama") or (self.preferred_provider == "gemini" and not self.gemini_available)
+
+        if not use_ollama:
+            try:
+                # Try Gemini first
+                response = self._gemini_model.generate_content(
+                    [prompt, f"\n\nUser Question: {query}"],
+                    generation_config=genai.GenerationConfig(
+                        temperature=0.2,
+                        max_output_tokens=1500,
+                    ),
+                )
+                return response.text
+            except Exception as e:
+                # Runtime fallback to local Ollama if running
+                print(f"[RAG] Gemini generation failed: {e}. Attempting fallback to local Ollama...")
+                if self.ollama_available:
+                    return self._generate_via_ollama(prompt, query)
+                else:
+                    return (
+                        f"I encountered an error generating a response via Gemini: {str(e)}\n\n"
+                        "I also tried to fall back to your local Ollama setup, but it is not running or has no models."
+                    )
+        else:
+            if self.ollama_available:
+                return self._generate_via_ollama(prompt, query)
+            else:
+                return (
+                    f"LLM Provider is configured to use Ollama, but local Ollama is not active or has no models.\n\n"
+                    "Please check if your container is running and has models downloaded."
+                )
 
     def build_sources(self, chunks: list[dict]) -> list[SourceDocument]:
         """Convert raw chunks to SourceDocument models for the API response."""

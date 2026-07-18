@@ -5,11 +5,11 @@ FastAPI Backend — Main Application
 
 from datetime import timedelta
 
-from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import FastAPI, Depends, HTTPException, status  # pyrefly: ignore [missing-import]
+from fastapi.middleware.cors import CORSMiddleware  # pyrefly: ignore [missing-import]
+from fastapi.security import OAuth2PasswordRequestForm  # pyrefly: ignore [missing-import]
 
-from backend.auth import authenticate_user, create_access_token, get_current_user
+from backend.auth import authenticate_user, create_access_token, get_current_user, require_root
 from backend.config import settings
 from backend.models import (
     TokenResponse,
@@ -17,12 +17,21 @@ from backend.models import (
     ChatResponse,
     HealthResponse,
     UserInfo,
+    UserCreate,
+    UserUpdate,
+    UserAdminResponse,
     ROLE_DISPLAY_NAMES,
     ROLE_COLORS,
     ROLE_EMOJIS,
 )
 from backend.rag_pipeline import get_rag_pipeline
 from backend.vector_store import list_collections
+from backend.users_store import (
+    load_all_users,
+    create_user_record,
+    update_user_record,
+    delete_user_record,
+)
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 
@@ -131,6 +140,86 @@ async def chat(
     )
 
 
+# ── Control Center / Admin Endpoints ──────────────────────────────────────────
+
+@app.get("/admin/users", response_model=list[UserAdminResponse], tags=["Administration"])
+async def get_users(admin: UserInfo = Depends(require_root)):
+    """List all registered users in the persistent database."""
+    users = load_all_users()
+    return [
+        UserAdminResponse(
+            username=u.username,
+            role=u.role,
+            full_name=u.full_name,
+            is_active=u.is_active,
+        )
+        for u in users.values()
+    ]
+
+
+@app.post("/admin/users", response_model=UserAdminResponse, tags=["Administration"])
+async def create_user(request: UserCreate, admin: UserInfo = Depends(require_root)):
+    """Register a new user inside the persistent database."""
+    try:
+        new_rec = create_user_record(
+            username=request.username.strip(),
+            password_raw=request.password,
+            role=request.role.value,
+            full_name=request.full_name.strip(),
+        )
+        return UserAdminResponse(
+            username=new_rec.username,
+            role=new_rec.role,
+            full_name=new_rec.full_name,
+            is_active=new_rec.is_active,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@app.put("/admin/users/{username}", response_model=UserAdminResponse, tags=["Administration"])
+async def update_user(
+    username: str,
+    request: UserUpdate,
+    admin: UserInfo = Depends(require_root),
+):
+    """Update a user's role, name, status, or password in the database."""
+    try:
+        updated_rec = update_user_record(
+            username=username,
+            password_raw=request.password,
+            role=request.role.value if request.role else None,
+            full_name=request.full_name.strip() if request.full_name else None,
+            is_active=request.is_active,
+        )
+        return UserAdminResponse(
+            username=updated_rec.username,
+            role=updated_rec.role,
+            full_name=updated_rec.full_name,
+            is_active=updated_rec.is_active,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@app.delete("/admin/users/{username}", status_code=status.HTTP_204_NO_CONTENT, tags=["Administration"])
+async def delete_user(username: str, admin: UserInfo = Depends(require_root)):
+    """Delete a user account (system administrator account cannot be deleted)."""
+    try:
+        delete_user_record(username)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
 # ── Startup Event ─────────────────────────────────────────────────────────────
 
 @app.on_event("startup")
@@ -140,21 +229,22 @@ async def startup_event():
     print(f"[API] Backend URL: {settings.backend_url}")
     collections = list_collections()
     if not collections:
-        print("[API] ⚠️  No vector collections found. Run: python scripts/ingest_data.py")
+        print("[API] [WARN] No vector collections found. Run: python scripts/ingest_data.py")
     else:
-        print(f"[API] ✅ Vector collections loaded: {collections}")
+        print(f"[API] [OK] Vector collections loaded: {collections}")
 
     # Pre-initialize the RAG pipeline
     try:
         get_rag_pipeline()
-        print("[API] ✅ RAG pipeline initialized successfully")
+        print("[API] [OK] RAG pipeline initialized successfully")
     except Exception as e:
-        print(f"[API] ⚠️  RAG pipeline init warning: {e}")
+        print(f"[API] [WARN] RAG pipeline init warning: {e}")
 
-    print("[API] 🚀 FinSolve RBAC Chatbot is ready!")
+    print("[API] [READY] FinSolve RBAC Chatbot is ready!")
 
 
 if __name__ == "__main__":
+    # pyrefly: ignore [missing-import]
     import uvicorn
     uvicorn.run(
         "backend.main:app",
