@@ -1,13 +1,15 @@
 /**
- * PlatformCenterLayout.jsx — Master Department Platform Center Layout with MongoDB Database Sessions
+ * PlatformCenterLayout.jsx — Master Department Platform Center Layout with Settings Popup Modal
  */
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { ROLE_CONFIG } from '../../constants';
 import { apiGetChatSessions, apiGetChatSessionDetail, apiDeleteChatSession } from '../../services/chatService';
 import PlatformSidebar from './components/sidebar/PlatformSidebar';
 import PlatformDashboardPage from './pages/PlatformDashboardPage';
 import DepartmentUsersPage from './pages/DepartmentUsersPage';
 import UserProfilePage from './pages/UserProfilePage';
+import PlatformSettingsModal from './components/settings/PlatformSettingsModal';
 import styles from './styles/platform_center.module.css';
 
 export default function PlatformCenterLayout() {
@@ -23,11 +25,18 @@ export default function PlatformCenterLayout() {
   });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // MongoDB Chat Sessions State
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
+
+  const roleConf = ROLE_CONFIG[auth.role] || {
+    label: auth.role || 'Scoped User',
+    color: '#10a37f',
+    emoji: auth.roleEmoji || '🏢',
+  };
 
   // Load chat session list from MongoDB on mount or user change
   useEffect(() => {
@@ -152,6 +161,7 @@ export default function PlatformCenterLayout() {
         onDeleteSession={handleDeleteSession}
         onNewChat={handleNewChat}
         onSelectSuggestion={handleSelectSuggestion}
+        onOpenSettings={() => setShowSettingsModal(true)}
       />
 
       {/* Main Active Module Screen */}
@@ -174,6 +184,13 @@ export default function PlatformCenterLayout() {
         {activeTab === 'team' && <DepartmentUsersPage auth={auth} logout={logout} setMobileOpen={setMobileOpen} />}
         {activeTab === 'profile' && <UserProfilePage auth={auth} setMobileOpen={setMobileOpen} />}
       </main>
+
+      {/* Platform Settings Modal */}
+      <PlatformSettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        roleConf={roleConf}
+      />
     </div>
   );
 }

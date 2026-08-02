@@ -1,5 +1,5 @@
 /**
- * ControlCenterSidebar.jsx — ChatGPT-style Collapsible Admin Sidebar
+ * ControlCenterSidebar.jsx — ChatGPT-style Collapsible Admin Sidebar with Settings Popup Trigger
  */
 import styles from '../../styles/control_center.module.css';
 
@@ -12,6 +12,7 @@ export default function ControlCenterSidebar({
   setActiveTab,
   auth,
   logout,
+  onOpenSettings,
 }) {
   return (
     <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarExpanded : styles.sidebarCollapsed} ${mobileOpen ? styles.mobileOpen : ''}`}>
@@ -82,6 +83,21 @@ export default function ControlCenterSidebar({
         >
           <span className={styles.navIcon}>📊</span>
           {sidebarOpen && <span className={styles.navLabel}>Department Tracker</span>}
+        </button>
+
+        {/* Settings Popup Nav Item */}
+        <button
+          className={styles.navItem}
+          onClick={() => {
+            if (onOpenSettings) onOpenSettings();
+            setMobileOpen(false);
+          }}
+          id="nav-settings-tab"
+          data-tooltip={!sidebarOpen ? 'Settings' : undefined}
+          title={!sidebarOpen ? 'Settings' : undefined}
+        >
+          <span className={styles.navIcon}>⚙️</span>
+          {sidebarOpen && <span className={styles.navLabel}>Settings</span>}
         </button>
       </nav>
 

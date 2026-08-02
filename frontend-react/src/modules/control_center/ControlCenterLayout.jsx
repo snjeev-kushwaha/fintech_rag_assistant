@@ -1,5 +1,5 @@
 /**
- * ControlCenterLayout.jsx — Master Root Admin Module Layout
+ * ControlCenterLayout.jsx — Master Root Admin Module Layout with Settings Popup Modal
  */
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
@@ -26,6 +26,7 @@ import EditDepartmentModal from './components/departments/EditDepartmentModal';
 import UserList from './components/users/UserList';
 import AddUserModal from './components/users/AddUserModal';
 import EditUserModal from './components/users/EditUserModal';
+import SettingsModal from './components/settings/SettingsModal';
 
 import styles from './styles/control_center.module.css';
 
@@ -77,6 +78,7 @@ export default function ControlCenterLayout() {
   const [showCreateUserModal, setShowCreateUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   // Form Inputs — Department
   const [deptNameInput, setDeptNameInput] = useState('');
@@ -356,6 +358,7 @@ export default function ControlCenterLayout() {
         setActiveTab={setActiveTab}
         auth={auth}
         logout={logout}
+        onOpenSettings={() => setShowSettingsModal(true)}
       />
 
       {/* Main Board */}
@@ -479,6 +482,11 @@ export default function ControlCenterLayout() {
         isActiveInput={isActiveInput}
         setIsActiveInput={setIsActiveInput}
         departmentsList={departmentsList}
+      />
+
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
       />
     </div>
   );

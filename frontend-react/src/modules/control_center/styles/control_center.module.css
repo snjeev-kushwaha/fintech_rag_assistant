@@ -1060,3 +1060,150 @@
   border-color: #ef4444;
   box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
 }
+
+/* ── Light Mode Overrides for Control Center ───────────────────────────────── */
+:global([data-theme='light']) .layout {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .sidebar {
+  background: #ffffff;
+  border-right-color: #e2e8f0;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme='light']) .brandTitle {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .sidebarToggle {
+  color: #64748b;
+}
+
+:global([data-theme='light']) .sidebarToggle:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .adminCard {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .adminUsername {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .navItem {
+  color: #475569;
+}
+
+:global([data-theme='light']) .navItem:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .activeNav {
+  background: #fee2e2 !important;
+  color: #ef4444 !important;
+}
+
+:global([data-theme='light']) .main {
+  background-color: #f8fafc;
+}
+
+:global([data-theme='light']) .title {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .subtitle {
+  color: #64748b;
+}
+
+:global([data-theme='light']) .searchInput {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .tableCard {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme='light']) .table th {
+  background: #f8fafc;
+  border-bottom-color: #e2e8f0;
+  color: #64748b;
+}
+
+:global([data-theme='light']) .table td {
+  border-bottom-color: #f1f5f9;
+  color: #334155;
+}
+
+:global([data-theme='light']) .fullNameCell {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .usernameCell code {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+:global([data-theme='light']) .modal {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+}
+
+:global([data-theme='light']) .modalHeader {
+  border-bottom-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .modalHeader h2 {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .field label {
+  color: #475569;
+}
+
+:global([data-theme='light']) .field input,
+:global([data-theme='light']) .field select,
+:global([data-theme='light']) .modalTextarea {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .modalFooter {
+  border-top-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .cancelBtn {
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+:global([data-theme='light']) .cancelBtn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .deptCard {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+}
+
+:global([data-theme='light']) .deptName {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .deptDesc {
+  color: #475569;
+}

@@ -250,6 +250,8 @@ def update_department_record(
         col.update_one({"id": dept_id}, {"$set": update_fields})
 
     updated_doc = col.find_one({"id": dept_id})
+    if not updated_doc:
+        raise ValueError(f"Department '{dept_id}' not found after update.")
     return DepartmentRecord.from_dict(updated_doc)
 
 

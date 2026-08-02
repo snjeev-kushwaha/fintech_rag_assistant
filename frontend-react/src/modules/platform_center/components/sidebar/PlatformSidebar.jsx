@@ -2,6 +2,7 @@
  * PlatformSidebar.jsx — Authentic ChatGPT Left Sidebar with Multi-Session Chat History
  */
 import { ROLE_CONFIG, ACCESS_MAP } from '../../../../constants';
+import { useTheme } from '../../../../context/ThemeContext';
 import styles from '../../styles/platform_center.module.css';
 
 export default function PlatformSidebar({
@@ -19,7 +20,9 @@ export default function PlatformSidebar({
   onDeleteSession,
   onNewChat,
   onSelectSuggestion,
+  onOpenSettings,
 }) {
+  const { theme, toggleTheme } = useTheme();
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#10a37f',
     emoji: auth.roleEmoji || '🏢',
@@ -129,6 +132,20 @@ export default function PlatformSidebar({
           >
             <span className={styles.navIcon}>👤</span>
             {sidebarOpen && <span className={styles.navLabel}>My Profile</span>}
+          </button>
+
+          {/* Settings Nav Item */}
+          <button
+            className={styles.navItem}
+            onClick={() => {
+              if (onOpenSettings) onOpenSettings();
+              setMobileOpen(false);
+            }}
+            id="nav-platform-settings"
+            title="Settings"
+          >
+            <span className={styles.navIcon}>⚙️</span>
+            {sidebarOpen && <span className={styles.navLabel}>Settings</span>}
           </button>
         </nav>
 

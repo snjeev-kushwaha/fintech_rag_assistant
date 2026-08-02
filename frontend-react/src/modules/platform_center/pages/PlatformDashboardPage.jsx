@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { ROLE_CONFIG } from '../../../constants';
 import { apiChat, apiUploadAttachment } from '../../../services/chatService';
+import { useTheme } from '../../../context/ThemeContext';
 import ChatMessageList from '../components/chat/ChatMessageList';
 import ChatInputForm from '../components/chat/ChatInputForm';
 import ErrorBanner from '../../../shared/components/ErrorBanner';
@@ -25,6 +26,7 @@ export default function PlatformDashboardPage({
   toggleSidebar,
   setMobileOpen,
 }) {
+  const { theme, toggleTheme } = useTheme();
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#10a37f',
     emoji: auth.roleEmoji || '🏢',
