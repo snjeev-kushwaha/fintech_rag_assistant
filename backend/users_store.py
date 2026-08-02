@@ -29,12 +29,13 @@ def get_users_collection():
 # ── User Records Representation ────────────────────────────────────────────────
 
 class UserRecord:
-    def __init__(self, username: str, hashed_password: str, role: str, full_name: str, is_active: bool = True):
+    def __init__(self, username: str, hashed_password: str, role: str, full_name: str, is_active: bool = True, departmentId: Optional[str] = None):
         self.username = username
         self.hashed_password = hashed_password
         self.role = role
         self.full_name = full_name
         self.is_active = is_active
+        self.departmentId = departmentId or role
 
     def to_dict(self) -> dict:
         return {
@@ -43,6 +44,7 @@ class UserRecord:
             "role": self.role,
             "full_name": self.full_name,
             "is_active": self.is_active,
+            "departmentId": self.departmentId,
         }
 
     @classmethod
@@ -53,6 +55,7 @@ class UserRecord:
             role=data["role"],
             full_name=data["full_name"],
             is_active=data.get("is_active", True),
+            departmentId=data.get("departmentId", data["role"]),
         )
 
 
@@ -78,6 +81,7 @@ def initialize_users_db():
             "role": UserRole.ROOT.value,
             "full_name": "System Administrator",
             "is_active": True,
+            "departmentId": "root",
         },
         {
             "username": "alice_finance",
@@ -85,6 +89,7 @@ def initialize_users_db():
             "role": UserRole.FINANCE.value,
             "full_name": "Alice Fernandez",
             "is_active": True,
+            "departmentId": "finance",
         },
         {
             "username": "bob_marketing",
@@ -92,6 +97,7 @@ def initialize_users_db():
             "role": UserRole.MARKETING.value,
             "full_name": "Bob Chatterjee",
             "is_active": True,
+            "departmentId": "marketing",
         },
         {
             "username": "carol_hr",
@@ -99,6 +105,7 @@ def initialize_users_db():
             "role": UserRole.HR.value,
             "full_name": "Carol Raj",
             "is_active": True,
+            "departmentId": "hr",
         },
         {
             "username": "dave_eng",
@@ -106,6 +113,7 @@ def initialize_users_db():
             "role": UserRole.ENGINEERING.value,
             "full_name": "Dave Pillai",
             "is_active": True,
+            "departmentId": "engineering",
         },
         {
             "username": "tony_cto",
@@ -113,6 +121,7 @@ def initialize_users_db():
             "role": UserRole.EXECUTIVE.value,
             "full_name": "Tony Sharma",
             "is_active": True,
+            "departmentId": "executive",
         },
         {
             "username": "employee1",
@@ -120,6 +129,7 @@ def initialize_users_db():
             "role": UserRole.EMPLOYEE.value,
             "full_name": "Rohan Kumar",
             "is_active": True,
+            "departmentId": "employee",
         },
     ]
 
@@ -154,19 +164,20 @@ def get_user_by_username(username: str) -> Optional[UserRecord]:
     return UserRecord.from_dict(doc)
 
 
-def create_user_record(username: str, password_raw: str, role: str, full_name: str) -> UserRecord:
+def create_user_record(username: str, password_raw: str, role: str, full_name: str, department_id: Optional[str] = None) -> UserRecord:
     """Create a new user and persist it in MongoDB."""
     col = get_users_collection()
     if col.find_one({"username": username}):
         raise ValueError(f"User '{username}' already exists.")
 
+    dept = department_id or role
     hashed = _hash_raw_password(password_raw)
-    new_rec = UserRecord(username=username, hashed_password=hashed, role=role, full_name=full_name)
+    new_rec = UserRecord(username=username, hashed_password=hashed, role=role, full_name=full_name, departmentId=dept)
     col.insert_one(new_rec.to_dict())
     return new_rec
 
 
-def update_user_record(username: str, password_raw: Optional[str] = None, role: Optional[str] = None, full_name: Optional[str] = None, is_active: Optional[bool] = None) -> UserRecord:
+def update_user_record(username: str, password_raw: Optional[str] = None, role: Optional[str] = None, full_name: Optional[str] = None, is_active: Optional[bool] = None, department_id: Optional[str] = None) -> UserRecord:
     """Update user fields and persist them in MongoDB."""
     col = get_users_collection()
     update_fields = {}
@@ -178,6 +189,8 @@ def update_user_record(username: str, password_raw: Optional[str] = None, role: 
         update_fields["full_name"] = full_name
     if is_active is not None:
         update_fields["is_active"] = is_active
+    if department_id is not None:
+        update_fields["departmentId"] = department_id
 
     if not update_fields:
         return get_user_by_username(username)

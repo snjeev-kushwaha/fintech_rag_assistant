@@ -19,7 +19,7 @@ from pathlib import Path
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 # Add project root to path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from backend.vector_store import ingest_directory, list_collections, get_chroma_client
 from backend.config import DATA_DIR, CHROMA_DIR

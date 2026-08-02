@@ -84,19 +84,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInfo:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found or inactive",
         )
+    role_str = str(user.role.value) if hasattr(user.role, "value") else str(user.role)
     return UserInfo(
         username=user.username,
-        role=UserRole(user.role),
-        display_name=ROLE_DISPLAY_NAMES[UserRole(user.role)],
-        role_color=ROLE_COLORS[UserRole(user.role)],
-        role_emoji=ROLE_EMOJIS[UserRole(user.role)],
+        role=role_str,
+        display_name=ROLE_DISPLAY_NAMES.get(role_str, user.full_name or role_str),
+        role_color=ROLE_COLORS.get(role_str, "#3b82f6"),
+        role_emoji=ROLE_EMOJIS.get(role_str, "🏢"),
     )
 
 
 # ── FastAPI Dependency: Require Root/Admin Privileges ─────────────────────────
 
 def require_root(current_user: UserInfo = Depends(get_current_user)) -> UserInfo:
-    if current_user.role != UserRole.ROOT:
+    role_str = str(current_user.role.value) if hasattr(current_user.role, "value") else str(current_user.role)
+    if role_str.lower() != "root":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required (Root role is required)",

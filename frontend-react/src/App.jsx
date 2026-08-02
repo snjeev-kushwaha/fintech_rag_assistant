@@ -1,19 +1,18 @@
 /**
- * App.jsx — Root component with auth-based routing
+ * App.jsx — Modular application shell with feature-based routing
  */
 import './App.css';
 import { useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
-import ChatPage from './pages/ChatPage';
-import ControlCenterPage from './pages/ControlCenterPage';
+import ControlCenterLayout from './modules/control_center/ControlCenterLayout';
+import PlatformCenterLayout from './modules/platform_center/PlatformCenterLayout';
 
 export default function App() {
   const { auth } = useAuth();
-  
+
   if (!auth.authenticated) {
     return <LoginPage />;
   }
-  
-  return auth.role === 'root' ? <ControlCenterPage /> : <ChatPage />;
-}
 
+  return auth.role === 'root' ? <ControlCenterLayout /> : <PlatformCenterLayout />;
+}

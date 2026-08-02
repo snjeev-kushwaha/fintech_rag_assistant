@@ -190,12 +190,14 @@ def query_collections(
     query: str,
     collection_names: list[str],
     top_k: int = None,
+    max_distance: float = None,
 ) -> list[dict]:
     """
-    Query one or more ChromaDB collections and return the top-k results,
-    merged and sorted by relevance distance.
+    Query ChromaDB collections for relevant document chunks matching user query.
+    Filters out results exceeding max_distance threshold to return ONLY relevant matching subset.
     """
     top_k = top_k or settings.retrieval_top_k
+    max_dist = max_distance if max_distance is not None else getattr(settings, "max_distance_threshold", 0.65)
     all_results = []
 
     for cname in collection_names:
@@ -215,19 +217,61 @@ def query_collections(
             dists = results["distances"][0]
 
             for doc, meta, dist in zip(docs, metas, dists):
-                all_results.append(
-                    {
-                        "content": doc,
-                        "source_file": meta.get("source_file", "unknown"),
-                        "department": meta.get("department", cname),
-                        "distance": dist,
-                        "collection": cname,
-                    }
-                )
+                if dist <= max_dist:
+                    all_results.append(
+                        {
+                            "content": doc,
+                            "source_file": meta.get("source_file", "unknown"),
+                            "department": meta.get("department", cname),
+                            "distance": dist,
+                            "collection": cname,
+                        }
+                    )
         except Exception as e:
             print(f"[VectorStore] Warning: Error querying '{cname}': {e}")
             continue
 
-    # Sort by distance (lower = more similar) and take top_k
+    # Sort by distance (lower = more similar) and return top_k matching chunks
     all_results.sort(key=lambda x: x["distance"])
     return all_results[:top_k]
+
+
+def ingest_single_file(file_path: Path, department: str) -> int:
+    """
+    Ingest a single document file into the department's ChromaDB vector collection.
+    Returns the number of chunks ingested.
+    """
+    collection_name = _to_collection_name(department)
+    collection = get_collection(collection_name)
+
+    try:
+        content = file_path.read_text(encoding="utf-8", errors="ignore")
+    except Exception as e:
+        print(f"[VectorStore] Error reading file {file_path}: {e}")
+        return 0
+
+    if not content.strip():
+        return 0
+
+    chunks = chunk_text(content)
+    ids = [str(uuid.uuid4()) for _ in chunks]
+    metadatas = [
+        {
+            "source_file": file_path.name,
+            "department": collection_name,
+            "chunk_index": i,
+            "total_chunks": len(chunks),
+        }
+        for i, _ in enumerate(chunks)
+    ]
+
+    batch_size = 50
+    for i in range(0, len(chunks), batch_size):
+        collection.add(
+            ids=ids[i : i + batch_size],
+            documents=chunks[i : i + batch_size],
+            metadatas=metadatas[i : i + batch_size],
+        )
+
+    print(f"[VectorStore] Successfully ingested {len(chunks)} chunks from {file_path.name} into '{collection_name}' collection.")
+    return len(chunks)

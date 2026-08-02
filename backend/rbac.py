@@ -56,12 +56,34 @@ COLLECTION_LABELS: dict[str, str] = {
 }
 
 
-def get_allowed_collections(role: UserRole) -> list[str]:
+def get_allowed_collections(role: UserRole | str) -> list[str]:
     """Return the list of ChromaDB collection names accessible to a given role."""
-    return ROLE_COLLECTIONS.get(role, ["general"])
+    role_str = role.value if isinstance(role, UserRole) else str(role).lower()
+
+    # Try matching UserRole enum
+    try:
+        enum_role = UserRole(role_str)
+        if enum_role in ROLE_COLLECTIONS:
+            return ROLE_COLLECTIONS[enum_role]
+    except ValueError:
+        pass
+
+    # Map standard string keys
+    if role_str in ["finance", "finance_team", "fin"]:
+        return ["finance", "general"]
+    if role_str in ["marketing", "marketing_sales"]:
+        return ["marketing", "general"]
+    if role_str in ["hr", "human_resources", "hr_data"]:
+        return ["hr_data", "general"]
+    if role_str in ["engineering", "eng"]:
+        return ["engineering", "general"]
+    if role_str in ["executive", "root", "c_level"]:
+        return ["finance", "marketing", "hr_data", "engineering", "general"]
+
+    return [role_str, "general"]
 
 
-def check_collection_access(role: UserRole, collection: str) -> bool:
+def check_collection_access(role: UserRole | str, collection: str) -> bool:
     """Return True if the role has access to the given collection."""
     return collection in get_allowed_collections(role)
 

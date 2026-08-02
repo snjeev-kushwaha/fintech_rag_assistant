@@ -51,27 +51,59 @@ ROLE_EMOJIS = {
 }
 
 
+# ── Department Models ──────────────────────────────────────────────────────────
+
+class DepartmentCreate(BaseModel):
+    name: str
+    description: str
+    image: Optional[str] = "🏢"
+    status: Optional[str] = "Active"
+    id: Optional[str] = None
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    image: Optional[str] = None
+    status: Optional[str] = None
+
+
+class DepartmentResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    image: str
+    status: str
+    createdBy: str
+    createdAt: str
+    updatedAt: str
+    user_count: int = 0
+
+
 # ── Request / Response Models ─────────────────────────────────────────────────
 
 class UserCreate(BaseModel):
     username: str
     password: str
-    role: UserRole
+    role: str
     full_name: str
+    departmentId: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
     password: Optional[str] = None
-    role: Optional[UserRole] = None
+    role: Optional[str] = None
     full_name: Optional[str] = None
     is_active: Optional[bool] = None
+    departmentId: Optional[str] = None
 
 
 class UserAdminResponse(BaseModel):
     username: str
-    role: UserRole
+    role: str
     full_name: str
     is_active: bool
+    departmentId: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -82,7 +114,7 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    role: UserRole
+    role: str
     display_name: str
     username: str
     role_color: str
@@ -91,7 +123,7 @@ class TokenResponse(BaseModel):
 
 class UserInfo(BaseModel):
     username: str
-    role: UserRole
+    role: str
     display_name: str
     role_color: str
     role_emoji: str
@@ -105,6 +137,7 @@ class SourceDocument(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: Optional[str] = None
     conversation_id: Optional[str] = None
 
 
@@ -113,6 +146,7 @@ class ChatResponse(BaseModel):
     sources: list[SourceDocument]
     role: UserRole
     collections_searched: list[str]
+    session_id: Optional[str] = None
 
 
 class HealthResponse(BaseModel):

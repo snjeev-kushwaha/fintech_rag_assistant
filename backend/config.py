@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     # ── Vector Store ───────────────────────────────────────────────────────────
-    chroma_persist_dir: str = "./chroma_db"
+    chroma_persist_dir: str = "./backend/chroma_db"
 
     # ── Data ───────────────────────────────────────────────────────────────────
-    data_dir: str = "./data"
+    data_dir: str = "./backend/data"
 
     # ── Server ─────────────────────────────────────────────────────────────────
     backend_host: str = "127.0.0.1"
@@ -37,18 +37,23 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 100
     retrieval_top_k: int = 5
+    max_distance_threshold: float = 0.65
     embedding_model: str = "all-MiniLM-L6-v2"
 
     # ── Database ───────────────────────────────────────────────────────────────
     mongo_uri: str = "mongodb://127.0.0.1:27017/"
     mongo_db_name: str = "finsolve_db"
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
+    model_config = {
+        "env_file": (Path(__file__).resolve().parent / ".env", ".env"),
+        "env_file_encoding": "utf-8",
+        "extra": "ignore",
+    }
 
 
 settings = Settings()
 
-# Base directory (project root)
+# Base directory (project root & backend)
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / settings.data_dir.lstrip("./")
-CHROMA_DIR = BASE_DIR / settings.chroma_persist_dir.lstrip("./")
+DATA_DIR = Path(__file__).resolve().parent / "data"
+CHROMA_DIR = Path(__file__).resolve().parent / "chroma_db"

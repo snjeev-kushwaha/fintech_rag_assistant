@@ -1,9 +1,7 @@
-.venv
-chroma_db/*
-data/engineering
-data/general
-data/hr
-data/marketing
-.env
-.env.example
+backend/.venv
+backend/.env
+backend/chroma_db/*
+backend/data/*
+frontend-react/node_modules
+frontend-react/dist
 pyrightconfig.json
