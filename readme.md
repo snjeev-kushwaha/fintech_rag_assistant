@@ -108,7 +108,7 @@ $env:PYTHONUTF8="1"
 python backend/scripts/ingest_data.py
 
 # Start FastAPI Backend Server
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 #### 4. Frontend Setup

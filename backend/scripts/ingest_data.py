@@ -6,7 +6,7 @@ Run this script ONCE before starting the chatbot to embed all
 department documents into ChromaDB.
 
 Usage:
-    cd d:\\FinTech
+    cd d:\\fin-tech\\backend
     python scripts/ingest_data.py
 """
 
@@ -18,11 +18,17 @@ from pathlib import Path
 # Force UTF-8 output on Windows to avoid cp1252 emoji issues
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+# Add project root and backend dir to path
+SCRIPTS_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = SCRIPTS_DIR.parent
+PROJECT_ROOT = BACKEND_DIR.parent
 
-from backend.vector_store import ingest_directory, list_collections, get_chroma_client
-from backend.config import DATA_DIR, CHROMA_DIR
+for p in [str(PROJECT_ROOT), str(BACKEND_DIR)]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from backend.app.db.vector_store import ingest_directory, list_collections, get_chroma_client, get_collection
+from backend.app.core.config import DATA_DIR, CHROMA_DIR
 
 
 def main():
@@ -36,7 +42,7 @@ def main():
     # Check if data directory exists
     if not DATA_DIR.exists():
         print(f"[ERROR] Data directory not found: {DATA_DIR}")
-        print("   Make sure you're running from the project root (d:\\FinTech)")
+        print("   Make sure the data folder exists in backend/data")
         sys.exit(1)
 
     # Check existing collections
@@ -81,13 +87,12 @@ def main():
     print("\n" + "=" * 60)
     print("  Ready! Start the chatbot with:")
     print()
-    print("  1. Backend:   uvicorn backend.main:app --reload")
-    print("  2. Frontend:  streamlit run frontend/app.py")
+    print("  1. Backend:   uvicorn app.main:app --reload")
+    print("  2. Frontend:  npm run dev (inside frontend-react)")
     print("=" * 60 + "\n")
 
 
 def print_summary(collections: list[str]):
-    from backend.vector_store import get_collection
     print("\n  Current Collections:")
     for cname in collections:
         col = get_collection(cname)
