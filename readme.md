@@ -1,226 +1,215 @@
-# 🏦 FinSolve Technologies — RAG RBAC Enterprise Chatbot & Control Center
+# 🏦 FinSolve Technologies — RAG RBAC Enterprise Chatbot
 
-A production-ready **Role-Based Access Control (RBAC) Enterprise Chatbot** and **Admin Control Center** built with **Retrieval-Augmented Generation (RAG)**, **local LLaMA 3.2 Docker integration**, **ChromaDB vector store**, **MongoDB chat session persistence**, and **department attachment uploads**.
+> A secure, role-based internal knowledge assistant and management dashboard for enterprise teams.
+
+---
+
+## 📖 What is this Project? (In Simple Words)
+
+In a company, different departments handle sensitive, confidential data:
+* **Finance** manages budget sheets, equipment procurement costs, and tax audits.
+* **HR** oversees employee directories, attendance records, and company policies.
+* **Engineering** manages architecture documentation, CI/CD processes, and operational runbooks.
+* **Marketing** tracks campaign performance, customer feedback, and sales metrics.
+
+**FinSolve AI** is an internal enterprise chatbot built with **Retrieval-Augmented Generation (RAG)** and **Role-Based Access Control (RBAC)**. 
+
+When a user asks a question, the AI **strictly restricts search to documents the user's role is authorized to view**:
+* An **Engineering team member** asking about financial budgets will be informed that no relevant documentation was found in their scope.
+* A **Finance team member** asking about expense reports receives exact figures with source file citations.
+* A **C-Level Executive** has full access across all corporate data.
+* An **Administrator** can manage users, configure department access, and upload new knowledge base documents.
+
+---
+
+## 👥 Role Permissions Overview
+
+* **Finance**: Access to financial reports, expense budgets, procurement costs, and general info.
+* **Marketing**: Access to marketing campaigns, sales metrics, customer NPS feedback, and general info.
+* **Human Resources**: Access to employee directories, payroll brackets, HR policies, and general info.
+* **Engineering**: Access to technical architecture, CI/CD runbooks, development guidelines, and general info.
+* **Executive (C-Level)**: Unrestricted access across all department knowledge bases.
+* **Employee**: Access to general company information, policies, and FAQs.
+* **System Administrator**: Full system access, document ingestion, user accounts management, and department control.
 
 ---
 
 ## 🏗️ Architecture Blueprint
 
 ```text
-                               ┌──────────────────────────────────────────────┐
-                               │       Vite React Frontend (Port 5173)        │
-                               │  - ChatGPT UI Theme & Hero Suggestions       │
-                               │  - Multi-Session Recents & Session History   │
-                               │  - Attachment File Upload Button             │
-                               │  - Admin Control Center: User Accounts CRUD │
-                               └──────────────────────┬───────────────────────┘
-                                                      │
-                                                      │ JWT-authenticated REST APIs
-                                                      ▼
-                               ┌──────────────────────────────────────────────┐
-                               │          FastAPI Backend (Port 8000)         │
-                               │  - JWT & bcrypt RBAC authentication          │
-                               │  - Local LLaMA 3.2 Default Provider (Ollama) │
-                               │  - Vector Search & Distance Filtering (0.65)  │
-                               │  - Attachment Ingestion Engine               │
-                               └──────┬───────────────┬───────────────┬───────┘
-                                      │               │               │
-                      ┌───────────────▼┐     ┌────────▼──────┐     ┌──▼────────────┐
-                      │    ChromaDB    │     │    MongoDB    │     │ Local LLaMA   │
-                      │ (Vector Store) │     │ (Local Store) │     │ (Ollama Container)
-                      │ - backend/     │     │ - User Records│     │ - llama3.2    │
-                      │   chroma_db    │     │ - Chat History│     │ - Port 11434  │
-                      └────────────────┘     └───────────────┘     └───────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│              React Vite Frontend (Port 5173)                │
+│  - ChatGPT Dark UI Theme & Floating Chat Bar               │
+│  - Multi-Session Chat History & Thread Management          │
+│  - Document Attachment Upload (+)                           │
+│  - Admin Control Center: User Accounts & Departments CRUD   │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+                               │ Authenticated REST API Requests
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 FastAPI Backend (Port 8000)                 │
+│  - JWT & Bcrypt Authentication with RBAC Enforcement        │
+│  - Modular Router Architecture (Auth, Chat, Admin, System)  │
+│  - Dynamic Context Filtering (Distance Threshold <= 0.65)   │
+└──────┬───────────────────────┬───────────────────────┬──────┘
+       │                       │                       │
+┌──────▼───────┐       ┌───────▼──────┐        ┌───────▼──────┐
+│   ChromaDB   │       │   MongoDB    │        │  Local AI    │
+│(Vector Store)│       │(Data Store)  │        │   (Ollama)   │
+│ - Embeddings │       │ - User Data  │        │ - llama3.2   │
+│ - Chunking   │       │ - Sessions   │        │ - Port 11434 │
+└──────────────┘       └──────────────┘        └──────────────┘
 ```
 
 ---
 
-## 🧠 ChromaDB Vector Store (`backend/chroma_db/`) Explained
+## 📂 Project Directory Structure
 
-### What is ChromaDB?
-ChromaDB is our local vector database engine. It stores 384-dimensional mathematical vector embeddings generated by `sentence-transformers` (`all-MiniLM-L6-v2`) for fast semantic similarity search across department documents.
-
-### Storage Location: `backend/chroma_db/`
-All vector store files are stored directly inside the backend directory:
-* **`backend/chroma_db/chroma.sqlite3`**: Relational metadata database storing document chunk metadata, collection mappings (`finance`, `marketing`, `hr_data`, `engineering`, `general`), IDs, and source file links.
-* **`backend/chroma_db/` HNSW Segment Files**: Binary vector indices built using Hierarchical Navigable Small World graphs for sub-millisecond retrieval.
-
-### Why `backend/chroma_db` is the Best Production Practice:
-1. **Encapsulation**: Keeps all backend-generated storage and data dependencies (`backend/data/` and `backend/chroma_db/`) self-contained under the `backend/` folder.
-2. **Clean Project Structure**: Prevents database binary files and SQLite lock files from cluttering the root project workspace alongside configuration files like `README.md` or `.env`.
-3. **Docker Volume Mounting**: Simplifies Docker persistent storage mounts:
-   ```bash
-   -v ./backend/chroma_db:/app/backend/chroma_db
-   -v ./backend/data:/app/backend/data
-   ```
+```text
+fin-tech/
+├── backend/
+│   ├── app/
+│   │   ├── main.py              # FastAPI app initialization, CORS & Lifespan
+│   │   ├── api/                 # Modular REST API endpoints
+│   │   │   ├── auth.py          # Authentication handlers
+│   │   │   ├── chat.py          # RAG Chat & Session handlers
+│   │   │   ├── departments.py   # Department management
+│   │   │   ├── users.py         # User management
+│   │   │   ├── system.py        # System health checks
+│   │   │   └── router.py        # Master API router aggregator
+│   │   ├── core/                # Core configurations & security
+│   │   │   ├── config.py        # Pydantic Settings & environment variables
+│   │   │   ├── security.py      # Password hashing & JWT token logic
+│   │   │   └── rbac.py          # Role permissions & collection mappings
+│   │   ├── db/                  # Database connections & data persistence
+│   │   │   ├── mongo.py         # MongoDB client & collection singleton
+│   │   │   ├── users_store.py   # User accounts database operations
+│   │   │   ├── departments_store.py # Department database operations
+│   │   │   ├── chat_store.py    # Chat session history operations
+│   │   │   └── vector_store.py  # ChromaDB embeddings & similarity search
+│   │   ├── models/              # Pydantic schemas
+│   │   │   └── schemas.py       # Request/response validation models
+│   │   └── services/            # Business logic
+│   │       └── rag_service.py   # RAG pipeline & LLM synthesis (Ollama / Gemini)
+│   ├── chroma_db/               # Local ChromaDB persistent vector storage
+│   ├── data/                    # Department source documents (.txt)
+│   ├── scripts/
+│   │   └── ingest_data.py       # Knowledge base ingestion script
+│   ├── Dockerfile               # Backend Dockerfile
+│   ├── docker-compose.yml       # Backend Docker Compose (Backend + Mongo + Ollama)
+│   ├── requirements.txt         # Python package dependencies
+│   └── .env                     # Backend environment variables
+│
+├── frontend-react/
+│   ├── src/                     # React application source code
+│   │   ├── components/          # UI Components (Sidebar, ChatBox, AdminModal, etc.)
+│   │   ├── services/            # API service calls
+│   │   ├── App.jsx              # Main React layout & state manager
+│   │   └── main.jsx             # React DOM root mount
+│   ├── Dockerfile               # Frontend Dockerfile
+│   ├── docker-compose.yml       # Frontend Docker Compose
+│   ├── package.json             # Node.js dependencies
+│   └── vite.config.js           # Vite development server configuration
+│
+└── README.md                    # Project documentation
+```
 
 ---
 
-## 🚀 Complete Feature Capabilities
+## 🛠️ Step-by-Step Setup Guide
 
-1. **ChatGPT-Inspired UI**: Authentic dark UI theme, hero welcome screen, 2x2 department suggestion cards, floating input bar, message action toolbar (`✓ Copied!`, Thumbs Up/Down), collapsible source drawer.
-2. **MongoDB Chat Sessions**: Conversation threads saved in local MongoDB (`chat_sessions` collection), single-thread message grouping, `⚡ New chat` session creation, history restoration via `GET /chat/sessions/{id}`, thread deletion via `DELETE /chat/sessions/{id}`.
-3. **Local LLaMA 3.2 Docker Default Routing**: Default model provider is local **LLaMA 3.2** running in Ollama Docker container (`http://127.0.0.1:11434`). Dynamic API key validation tests Google Gemini and falls back seamlessly to LLaMA if Gemini is quota-exhausted or unconfigured.
-4. **Semantic Distance Threshold**: Cutoff distance threshold ($dist \le 0.65$) filters out non-matching chunks prior to LLM generation.
-5. **Department Attachment Uploads**: Attachment button (`+`) uploads documents directly to `backend/data/<department>/` and auto-indexes them into ChromaDB in real-time.
-6. **RBAC & Control Center**: Role-scoped data isolation (`finance`, `marketing`, `hr`, `engineering`, `executive`, `employee`) and full user management for `root`.
+You can run the project using **Option 1 (Local Native)** or **Option 2 (Docker)**.
 
 ---
-
-## 🛠️ Step-by-Step Local & Docker Setup Guide
 
 ### Option 1: Local Native Setup
 
-#### 1. Prerequisites
-- **Python 3.11** or **uv** installed.
-- **Node.js v18+** installed.
-- **MongoDB** running on `localhost:27017`.
-- **Ollama Docker Container** running on `localhost:11434`.
+#### Prerequisites
+* **Python 3.11+**
+* **Node.js 18+** & `npm`
+* **MongoDB** running on `localhost:27017`
+* **Ollama** running locally on `localhost:11434` with model `llama3.2`
 
-#### 2. Start Database & Model Containers
+#### 1. Start MongoDB & Ollama Containers
 ```bash
-# Start MongoDB Container
+# Start MongoDB container
 docker run -d -p 27017:27017 --name local-mongodb mongo:latest
 
-# Start Ollama LLaMA 3.2 Container
+# Start Ollama container
 docker run -d -p 11434:11434 --name ollama -v ollama:/root/.ollama ollama/ollama:latest
 
-# Pull LLaMA 3.2 model into Ollama container
+# Pull LLaMA 3.2 model into Ollama
 docker exec -it ollama ollama pull llama3.2
 ```
 
-#### 3. Backend Setup & Ingestion
+#### 2. Backend Setup
 ```powershell
-# Navigate to project root
-cd d:\FinTech
+# 1. Navigate to the backend folder
+cd backend
 
-# Activate virtual environment
+# 2. Create and activate a Python virtual environment
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
-# Install Python dependencies
-uv pip install -r requirements.txt
+# 3. Install backend dependencies
+pip install -r requirements.txt
 
-# Create .env configuration file
-# (Copy from .env.example)
+# 4. Ingest department documents into ChromaDB (Run once)
+python scripts/ingest_data.py
 
-# Ingest department documents into backend/chroma_db
-$env:PYTHONUTF8="1"
-python backend/scripts/ingest_data.py
-
-# Start FastAPI Backend Server
+# 5. Start the FastAPI backend server
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+Backend API will be running at: **`http://127.0.0.1:8000`**  
+Interactive API Docs (Swagger UI): **`http://127.0.0.1:8000/docs`**
 
-#### 4. Frontend Setup
-```bash
-# Navigate to frontend folder
+#### 3. Frontend Setup
+Open a new terminal window:
+```powershell
+# 1. Navigate to the frontend folder
 cd frontend-react
 
-# Install Node.js dependencies
+# 2. Install dependencies
 npm install
 
-# Start Vite React Dev Server
+# 3. Start Vite dev server
 npm run dev
 ```
-Open **`http://localhost:5173/`** in your browser!
+Open your browser and visit: **`http://localhost:5173`**
 
 ---
 
 ### Option 2: Full Docker Containerized Setup
 
-#### 1. Create `docker-compose.yml`
-```yaml
-version: '3.8'
+Both `backend` and `frontend-react` have their own self-contained `docker-compose.yml` files.
 
-services:
-  mongodb:
-    image: mongo:latest
-    container_name: finsolve-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-  ollama:
-    image: ollama/ollama:latest
-    container_name: finsolve-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: finsolve-backend
-    ports:
-      - "8000:8000"
-    environment:
-      - LLM_PROVIDER=ollama
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL=llama3.2
-      - MONGO_URI=mongodb://mongodb:27017/
-      - MONGO_DB_NAME=finsolve_db
-    volumes:
-      - ./backend/data:/app/backend/data
-      - ./backend/chroma_db:/app/backend/chroma_db
-    depends_on:
-      - mongodb
-      - ollama
-
-  frontend:
-    build:
-      context: ./frontend-react
-      dockerfile: Dockerfile.frontend
-    container_name: finsolve-frontend
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
-
-volumes:
-  mongo_data:
-  ollama_data:
+#### 1. Start the Backend Stack (Backend + MongoDB + Ollama)
+```powershell
+cd backend
+docker compose up -d --build
 ```
 
-#### 2. Build & Launch Docker Stack
-```bash
-# Launch Docker Compose stack
-docker-compose up -d
-
-# Pull LLaMA 3.2 model inside running Ollama container
+##### Pull LLaMA 3.2 into the Ollama container (first time only):
+```powershell
 docker exec -it finsolve-ollama ollama pull llama3.2
 ```
 
----
+#### 2. Start the Frontend Stack
+Open a new terminal:
+```powershell
+cd frontend-react
+docker compose up -d --build
+```
 
-## 👥 Default Login Credentials
-
-| Username | Password | Role Group | Access Scope |
-| :--- | :--- | :--- | :--- |
-| **`root`** | **`root123`** | `root` | 👑 **System Control Center Administrator** |
-| `alice_finance` | `finance123` | `finance` | Financial reports, budgets & reimbursements |
-| `bob_marketing` | `marketing123`| `marketing` | Campaign performance & NPS analytics |
-| `carol_hr` | `hr123` | `hr` | Payroll data & employee performance reviews |
-| `dave_eng` | `eng123` | `engineering`| Architectural documentation & CI/CD runbooks |
-| `tony_cto` | `executive123`| `executive` | Enterprise-wide access to all company data |
-| `employee1` | `employee123` | `employee` | General policies & company directories |
+Frontend will be accessible at: **`http://localhost:5173`**
 
 ---
 
-## 🔗 Core API Endpoints Reference
+## 💡 Key Features Breakdown
 
-| Method | Endpoint | Authorization | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Open | Health check & vector store status |
-| `POST`| `/auth/login` | Open | Authenticates user & returns JWT access token |
-| `POST`| `/chat` | Bearer Token | Executes RAG query via LLaMA/Gemini & saves to MongoDB |
-| `POST`| `/chat/upload` | Bearer Token | Uploads attachment to `backend/data/<dept>` & indexes into ChromaDB |
-| `GET` | `/chat/sessions` | Bearer Token | Lists all saved MongoDB chat session threads for user |
-| `GET` | `/chat/sessions/{id}` | Bearer Token | Retrieves full chat session thread with all messages from MongoDB |
-| `DELETE`| `/chat/sessions/{id}`| Bearer Token | Deletes specified chat session thread from MongoDB |
-| `GET` | `/admin/users`| Root JWT | Lists all user accounts saved in MongoDB |
-| `POST`| `/admin/users`| Root JWT | Creates a new user account in MongoDB |
-| `PUT` | `/admin/users`| Root JWT | Updates user role, display name, status or password |
-| `DELETE`| `/admin/users`| Root JWT | Permanently removes a user account from MongoDB |
+1. **🔒 Secure Role-Based Access Control (RBAC)**: Enforces strict department-level data boundaries.
+2. **🧠 ChromaDB Semantic Distance Filtering**: Low-relevance chunks are filtered out prior to response synthesis.
+3. **🔄 Multi-Session MongoDB Persistence**: Previous chat threads are saved and restored seamlessly.
+4. **⚡ Seamless Local AI Fallback**: Runs on local LLaMA 3.2 out-of-the-box, with optional Google Gemini API support.
+5. **📁 Real-Time Attachment Indexing**: Upload files directly from the UI into department collections.
