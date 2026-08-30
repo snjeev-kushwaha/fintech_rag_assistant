@@ -94,3 +94,20 @@ def delete_chat_session(session_id: str, username: str) -> bool:
     col = get_chat_sessions_collection()
     result = col.delete_one({"session_id": session_id, "username": username})
     return result.deleted_count > 0
+
+
+def rename_chat_session(session_id: str, username: str, new_title: str) -> dict | None:
+    """Rename an existing chat session in MongoDB."""
+    col = get_chat_sessions_collection()
+    clean_title = new_title.strip()
+    if not clean_title:
+        return None
+    now_iso = datetime.utcnow().isoformat()
+    result = col.find_one_and_update(
+        {"session_id": session_id, "username": username},
+        {"$set": {"title": clean_title, "updated_at": now_iso}},
+        return_document=True,
+        projection={"_id": 0}
+    )
+    return result
+

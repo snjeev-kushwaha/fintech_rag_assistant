@@ -153,7 +153,12 @@ class ChatResponse(BaseModel):
     session_id: Optional[str] = None
 
 
+class RenameSessionRequest(BaseModel):
+    title: str
+
+
 class HealthResponse(BaseModel):
     status: str
     version: str
     collections_loaded: list[str]
+

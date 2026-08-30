@@ -1,6 +1,8 @@
 /**
- * EditDepartmentModal.jsx — Edit Department Modal
+ * EditDepartmentModal.jsx — Edit Department Details Modal
+ * Clean, balanced 2-column grid layout with SVG icons & consistent SaaS design
  */
+import { IconBuilding, IconX } from '../../../../shared/components/Icons';
 import styles from '../../styles/control_center.module.css';
 
 export default function EditDepartmentModal({
@@ -22,63 +24,83 @@ export default function EditDepartmentModal({
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        {/* Modal Header */}
         <div className={styles.modalHeader}>
-          <h2>Edit Department Details</h2>
-          <button className={styles.modalClose} onClick={onClose}>&times;</button>
+          <div className={styles.modalHeaderLeft}>
+            <div className={styles.modalHeaderIcon}>
+              <IconBuilding size={20} />
+            </div>
+            <div>
+              <h2 className={styles.modalTitle}>Edit Department Details</h2>
+              <p className={styles.modalSubtitle}>Update knowledge domain settings & access configurations</p>
+            </div>
+          </div>
+          <button className={styles.modalClose} onClick={onClose} aria-label="Close modal">
+            <IconX size={18} />
+          </button>
         </div>
+
+        {/* Form Body */}
         <form onSubmit={onSubmit} id="edit-dept-form">
           <div className={styles.modalBody}>
-            <div className={styles.field}>
-              <label>Department Key ID</label>
-              <input
-                type="text"
-                value={editingDept.id}
-                disabled
-                style={{ background: '#1e293b', cursor: 'not-allowed', color: '#94a3b8' }}
-              />
-            </div>
-
-            <div className={styles.fieldRow}>
-              <div className={styles.field} style={{ flex: 1 }}>
-                <label htmlFor="edit-dept-emoji">Icon / Image URL</label>
-                <input
-                  id="edit-dept-emoji"
-                  type="text"
-                  value={deptEmojiInput}
-                  onChange={(e) => setDeptEmojiInput(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className={styles.field} style={{ flex: 1 }}>
-                <label htmlFor="edit-dept-status">Status</label>
-                <select
-                  id="edit-dept-status"
-                  value={deptStatusInput}
-                  onChange={(e) => setDeptStatusInput(e.target.value)}
-                  style={{ height: '42px' }}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-              </div>
-
-              <div className={styles.field} style={{ flex: 2 }}>
+            {/* Row 1: Name and Key */}
+            <div className={styles.fieldGrid2}>
+              <div className={styles.field}>
                 <label htmlFor="edit-dept-name">Department Name</label>
                 <input
                   id="edit-dept-name"
                   type="text"
+                  placeholder="e.g. Compliance & Legal"
                   value={deptNameInput}
                   onChange={(e) => setDeptNameInput(e.target.value)}
                   required
                 />
               </div>
+
+              <div className={styles.field}>
+                <label htmlFor="edit-dept-key">Role Key / Identifier</label>
+                <input
+                  id="edit-dept-key"
+                  type="text"
+                  value={editingDept.id}
+                  disabled
+                  className={styles.disabledInput}
+                />
+              </div>
             </div>
 
+            {/* Row 2: Status and Icon Scope */}
+            <div className={styles.fieldGrid2}>
+              <div className={styles.field}>
+                <label htmlFor="edit-dept-status">Operational Status</label>
+                <select
+                  id="edit-dept-status"
+                  value={deptStatusInput}
+                  onChange={(e) => setDeptStatusInput(e.target.value)}
+                >
+                  <option value="Active">Active (RAG Enabled)</option>
+                  <option value="Inactive">Inactive (Disabled)</option>
+                </select>
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="edit-dept-emoji">Category / Icon Tag (Optional)</label>
+                <input
+                  id="edit-dept-emoji"
+                  type="text"
+                  placeholder="e.g. legal, finance, or image URL"
+                  value={deptEmojiInput}
+                  onChange={(e) => setDeptEmojiInput(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Row 3: Description */}
             <div className={styles.field}>
-              <label htmlFor="edit-dept-desc">Description</label>
+              <label htmlFor="edit-dept-desc">Department Description</label>
               <textarea
                 id="edit-dept-desc"
+                placeholder="Describe the department responsibilities, document types, and knowledge boundaries..."
                 value={deptDescInput}
                 onChange={(e) => setDeptDescInput(e.target.value)}
                 rows={3}
@@ -88,6 +110,7 @@ export default function EditDepartmentModal({
             </div>
           </div>
 
+          {/* Modal Footer */}
           <div className={styles.modalFooter}>
             <button type="button" className={styles.cancelBtn} onClick={onClose}>
               Cancel

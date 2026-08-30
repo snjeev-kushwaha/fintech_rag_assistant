@@ -1,8 +1,24 @@
 /**
- * PlatformSidebar.jsx — Authentic ChatGPT Left Sidebar with Multi-Session Chat History
+ * PlatformSidebar.jsx — Authentic ChatGPT Left Sidebar with Multi-Session Chat History, Triple Dot Menu (Rename/Delete), Profile Modal Trigger & Theme Controls
+ * Uses clean SVG iconography (No childish emojis)
  */
-import { ROLE_CONFIG, ACCESS_MAP } from '../../../../constants';
+import { useState, useRef, useEffect } from 'react';
+import { ROLE_CONFIG } from '../../../../constants';
 import { useTheme } from '../../../../context/ThemeContext';
+import {
+  IconMessageSquare,
+  IconUsers,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconLogOut,
+  IconSun,
+  IconMoon,
+  IconPalette,
+  IconCheck,
+  IconSparkles,
+  IconX,
+} from '../../../../shared/components/Icons';
 import styles from '../../styles/platform_center.module.css';
 
 export default function PlatformSidebar({
@@ -18,21 +34,68 @@ export default function PlatformSidebar({
   activeSessionId,
   onSelectSession,
   onDeleteSession,
+  onRenameSession,
   onNewChat,
-  onSelectSuggestion,
-  onOpenSettings,
+  onOpenProfile,
 }) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setMode, colorTheme, setColorTheme, COLOR_THEMES } = useTheme();
+  const [showThemePopover, setShowThemePopover] = useState(false);
+  const [activeMenuSessionId, setActiveMenuSessionId] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const popoverRef = useRef(null);
+  const editInputRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowThemePopover(false);
+      }
+      // Close active triple dot dropdown when clicking outside
+      if (!event.target.closest(`.${styles.recentMenuDropdown}`) && !event.target.closest(`.${styles.recentOptionsBtn}`)) {
+        setActiveMenuSessionId(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (editingSessionId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingSessionId]);
+
+  function startRename(session, e) {
+    e?.stopPropagation();
+    const sId = session.session_id || session.id;
+    setEditingSessionId(sId);
+    setEditTitle(session.title || '');
+    setActiveMenuSessionId(null);
+  }
+
+  function handleSaveRename(sId, e) {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (editTitle.trim() && onRenameSession) {
+      onRenameSession(sId, editTitle.trim());
+    }
+    setEditingSessionId(null);
+  }
+
+  function handleCancelRename(e) {
+    e?.stopPropagation();
+    setEditingSessionId(null);
+  }
+
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#10a37f',
-    emoji: auth.roleEmoji || '🏢',
     label: auth.displayName || auth.role,
     suggestions: [],
   };
-  const accessMap = ACCESS_MAP[auth.role] || {};
-  const accessibleDepts = Object.entries(accessMap)
-    .filter(([, allowed]) => allowed)
-    .map(([dept]) => dept);
 
   const userInitials = (auth.displayName || auth.username || 'U')
     .split(' ')
@@ -50,7 +113,9 @@ export default function PlatformSidebar({
       {/* Sidebar Header */}
       <div className={styles.sidebarHeader}>
         <div className={styles.brandRow}>
-          <div className={styles.logoIcon}>⚡</div>
+          <div className={styles.logoIcon}>
+            <IconSparkles size={16} />
+          </div>
           {sidebarOpen && (
             <div className={styles.brandText}>
               <span className={styles.brandTitle}>FinSolve Portal</span>
@@ -81,10 +146,10 @@ export default function PlatformSidebar({
           title="New Chat"
         >
           <div className={styles.newChatLeft}>
-            <span>⚡</span>
+            <IconPlus size={16} />
             <span>New chat</span>
           </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
@@ -104,7 +169,9 @@ export default function PlatformSidebar({
             id="nav-chat-tab"
             title="RAG Assistant"
           >
-            <span className={styles.navIcon}>💬</span>
+            <span className={styles.navIcon}>
+              <IconMessageSquare size={17} />
+            </span>
             {sidebarOpen && <span className={styles.navLabel}>RAG Assistant</span>}
           </button>
 
@@ -117,39 +184,14 @@ export default function PlatformSidebar({
             id="nav-team-tab"
             title="Department Team"
           >
-            <span className={styles.navIcon}>👥</span>
+            <span className={styles.navIcon}>
+              <IconUsers size={17} />
+            </span>
             {sidebarOpen && <span className={styles.navLabel}>Department Team</span>}
-          </button>
-
-          <button
-            className={`${styles.navItem} ${activeTab === 'profile' ? styles.activeNav : ''}`}
-            onClick={() => {
-              setActiveTab('profile');
-              setMobileOpen(false);
-            }}
-            id="nav-profile-tab"
-            title="My Profile"
-          >
-            <span className={styles.navIcon}>👤</span>
-            {sidebarOpen && <span className={styles.navLabel}>My Profile</span>}
-          </button>
-
-          {/* Settings Nav Item */}
-          <button
-            className={styles.navItem}
-            onClick={() => {
-              if (onOpenSettings) onOpenSettings();
-              setMobileOpen(false);
-            }}
-            id="nav-platform-settings"
-            title="Settings"
-          >
-            <span className={styles.navIcon}>⚙️</span>
-            {sidebarOpen && <span className={styles.navLabel}>Settings</span>}
           </button>
         </nav>
 
-        {/* Recent Chat Sessions */}
+        {/* Recent Chat Sessions with Triple Dot Options */}
         {sidebarOpen && activeTab === 'chat' && sessions && sessions.length > 0 && (
           <div className={styles.sidebarSection}>
             <div className={styles.sidebarSectionTitle}>Recents</div>
@@ -157,34 +199,105 @@ export default function PlatformSidebar({
               {sessions.map((session) => {
                 const sId = session.session_id || session.id;
                 const isActive = sId === activeSessionId;
+                const isMenuOpen = activeMenuSessionId === sId;
+                const isEditing = editingSessionId === sId;
+
+                if (isEditing) {
+                  return (
+                    <div key={sId} className={`${styles.recentItemRow} ${styles.activeRecentRow}`}>
+                      <form
+                        className={styles.renameForm}
+                        onSubmit={(e) => handleSaveRename(sId, e)}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          ref={editInputRef}
+                          type="text"
+                          className={styles.renameInput}
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') handleCancelRename(e);
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          className={`${styles.renameActionBtn} ${styles.renameSaveBtn}`}
+                          title="Save Title"
+                        >
+                          <IconCheck size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.renameActionBtn}
+                          onClick={handleCancelRename}
+                          title="Cancel"
+                        >
+                          <IconX size={14} />
+                        </button>
+                      </form>
+                    </div>
+                  );
+                }
+
                 return (
                   <div
                     key={sId}
-                    className={`${styles.recentItemRow} ${isActive ? styles.activeRecentRow : ''}`}
+                    className={`${styles.recentItemRow} ${isActive ? styles.activeRecentRow : ''} ${
+                      isMenuOpen ? styles.activeMenuOpen : ''
+                    }`}
                   >
                     <button
                       className={`${styles.suggestionItem} ${isActive ? styles.activeSuggestionItem : ''}`}
                       onClick={() => onSelectSession(sId)}
                       title={session.title}
                     >
-                      <span>💬</span>
+                      <IconMessageSquare size={14} style={{ opacity: 0.75, flexShrink: 0 }} />
                       <span className={styles.suggestionText}>{session.title}</span>
                     </button>
-                    {onDeleteSession && (
-                      <button
-                        className={styles.deleteRecentBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSession(sId);
-                        }}
-                        title="Delete chat session"
-                        aria-label={`Delete ${session.title}`}
+
+                    {/* Triple Dot Options Button */}
+                    <button
+                      className={styles.recentOptionsBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveMenuSessionId((prev) => (prev === sId ? null : sId));
+                      }}
+                      title="Chat options"
+                      aria-label={`Options for ${session.title}`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="1.5" />
+                        <circle cx="19" cy="12" r="1.5" />
+                        <circle cx="5" cy="12" r="1.5" />
+                      </svg>
+                    </button>
+
+                    {/* Floating Dropdown Menu for Rename & Delete */}
+                    {isMenuOpen && (
+                      <div
+                        className={styles.recentMenuDropdown}
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
+                        <button
+                          className={styles.recentMenuItem}
+                          onClick={(e) => startRename(session, e)}
+                        >
+                          <IconEdit size={13} />
+                          <span>Rename</span>
+                        </button>
+                        <button
+                          className={`${styles.recentMenuItem} ${styles.recentMenuItemDelete}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuSessionId(null);
+                            if (onDeleteSession) onDeleteSession(sId);
+                          }}
+                        >
+                          <IconTrash size={13} />
+                          <span>Delete</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 );
@@ -192,64 +305,116 @@ export default function PlatformSidebar({
             </div>
           </div>
         )}
-
-        {/* Suggested Queries */}
-        {sidebarOpen && activeTab === 'chat' && roleConf.suggestions && roleConf.suggestions.length > 0 && (
-          <div className={styles.sidebarSection}>
-            <div className={styles.sidebarSectionTitle}>Suggested Queries</div>
-            <div className={styles.suggestionsList}>
-              {roleConf.suggestions.map((suggestion, idx) => (
-                <button
-                  key={idx}
-                  className={styles.suggestionItem}
-                  onClick={() => onSelectSuggestion(suggestion)}
-                  title={suggestion}
-                >
-                  <span>💡</span>
-                  <span className={styles.suggestionText}>{suggestion}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Vector Access Scopes */}
-        {sidebarOpen && accessibleDepts.length > 0 && (
-          <div className={styles.sidebarSection}>
-            <div className={styles.sidebarSectionTitle}>Vector Scope</div>
-            <div className={styles.scopeBadgesList}>
-              {accessibleDepts.map((dept) => (
-                <span key={dept} className={styles.scopeBadge}>
-                  • {dept} Data
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      {/* User Profile & Sign Out Footer */}
+      {/* User Profile & Theme Controls Footer */}
       {sidebarOpen && (
-        <div className={styles.sidebarFooter}>
-          <div className={styles.userCard}>
+        <div className={styles.sidebarFooter} ref={popoverRef}>
+          {/* Floating Color Theme Popover */}
+          {showThemePopover && (
+            <div className={styles.themePopover}>
+              <div className={styles.themePopoverHeader}>
+                <div className={styles.themePopoverTitle}>Color theme</div>
+                <div className={styles.themePopoverSubtitle}>Independent from light and dark mode</div>
+              </div>
+              <div className={styles.themePopoverList}>
+                {COLOR_THEMES.map((item) => {
+                  const isSelected = item.id === colorTheme;
+                  return (
+                    <button
+                      key={item.id}
+                      className={`${styles.themePopoverItem} ${isSelected ? styles.activeThemePopoverItem : ''}`}
+                      onClick={() => {
+                        setColorTheme(item.id);
+                        setShowThemePopover(false);
+                      }}
+                    >
+                      <div className={styles.themeItemLeft}>
+                        <div
+                          className={styles.themeSwatch}
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <div className={styles.themeItemText}>
+                          <span className={styles.themeName}>{item.name}</span>
+                          <span className={styles.themeDesc}>{item.desc}</span>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <span className={styles.themeCheckmark}>
+                          <IconCheck size={14} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* User Profile Card - Click to Open Centered Profile Details Modal */}
+          <div
+            className={styles.userCard}
+            onClick={() => {
+              setShowThemePopover(false);
+              if (onOpenProfile) onOpenProfile();
+              setMobileOpen(false);
+            }}
+            title="Click to view Profile Details"
+            role="button"
+            tabIndex={0}
+          >
             <div className={styles.userInfoLeft}>
               <div className={styles.userAvatar}>{userInitials}</div>
               <div className={styles.userText}>
                 <span className={styles.userName}>{auth.displayName || auth.username}</span>
-                <span className={styles.userRole}>{roleConf.label}</span>
+                <div className={styles.userRoleRow}>
+                  <span>{roleConf.label}</span>
+                  <span className={styles.statusDot}></span>
+                </div>
               </div>
             </div>
+            <button
+              className={styles.miniLogoutBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+              }}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <IconLogOut size={14} />
+            </button>
           </div>
 
-          <button
-            className={styles.logoutBtn}
-            onClick={logout}
-            id="platform-logout-btn"
-            title="Sign Out"
-          >
-            <span>🚪</span>
-            <span>Sign Out</span>
-          </button>
+          {/* Light / Dark Mode & Theme Palette Toolbar */}
+          <div className={styles.themeToolbar}>
+            <div className={styles.themeModeGroup}>
+              <button
+                className={`${styles.themeModeBtn} ${theme === 'light' ? styles.activeThemeMode : ''}`}
+                onClick={() => setMode('light')}
+                title="Light Mode"
+              >
+                <IconSun size={14} />
+                <span>Light</span>
+              </button>
+              <button
+                className={`${styles.themeModeBtn} ${theme === 'dark' ? styles.activeThemeMode : ''}`}
+                onClick={() => setMode('dark')}
+                title="Dark Mode"
+              >
+                <IconMoon size={14} />
+                <span>Dark</span>
+              </button>
+            </div>
+            <button
+              className={`${styles.paletteBtn} ${showThemePopover ? styles.activePaletteBtn : ''}`}
+              onClick={() => setShowThemePopover((prev) => !prev)}
+              title="Color Themes"
+              aria-label="Select Color Theme"
+            >
+              <IconPalette size={15} />
+            </button>
+          </div>
         </div>
       )}
     </aside>

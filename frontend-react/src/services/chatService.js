@@ -88,3 +88,21 @@ export async function apiDeleteChatSession(token, sessionId) {
   }
   return true;
 }
+
+export async function apiRenameChatSession(token, sessionId, newTitle) {
+  const res = await fetch(`${BASE_URL}/chat/sessions/${sessionId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ title: newTitle }),
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('SESSION_EXPIRED');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Error ${res.status}`);
+  }
+  return res.json();
+}
+

@@ -18,6 +18,13 @@ from backend.app.db.chat_store import (
     get_chat_session_by_id,
     create_or_update_chat_session,
     delete_chat_session,
+    rename_chat_session,
+)
+from backend.app.models.schemas import (
+    ChatRequest,
+    ChatResponse,
+    UserInfo,
+    RenameSessionRequest,
 )
 
 router = APIRouter(tags=["Chat"])
@@ -36,6 +43,21 @@ async def get_chat_session(session_id: str, current_user: UserInfo = Depends(get
     if not doc:
         raise HTTPException(status_code=404, detail="Chat session not found")
     return doc
+
+
+@router.patch("/chat/sessions/{session_id}")
+async def rename_chat_session_endpoint(
+    session_id: str,
+    payload: RenameSessionRequest,
+    current_user: UserInfo = Depends(get_current_user),
+):
+    """Rename an existing chat session thread."""
+    if not payload.title or not payload.title.strip():
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+    updated = rename_chat_session(session_id, current_user.username, payload.title.strip())
+    if not updated:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+    return updated
 
 
 @router.delete("/chat/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -98,16 +120,11 @@ async def upload_attachment(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file selected")
 
-    role_dept_map = {
-        "finance": "finance",
-        "marketing": "marketing",
-        "hr": "hr",
-        "engineering": "engineering",
-        "executive": "general",
-        "employee": "general",
-        "root": "general",
-    }
-    dept_folder = role_dept_map.get(current_user.role, "general")
+    if current_user.role == "root":
+        dept_folder = "general"
+    else:
+        dept_folder = current_user.role.lower()
+
     target_dir = DATA_DIR / dept_folder
     target_dir.mkdir(parents=True, exist_ok=True)
 

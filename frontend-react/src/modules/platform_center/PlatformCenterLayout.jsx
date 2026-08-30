@@ -1,20 +1,28 @@
 /**
- * PlatformCenterLayout.jsx — Master Department Platform Center Layout with Settings Popup Modal
+ * PlatformCenterLayout.jsx — Master Department Platform Center Layout with Confirmation Modals & Multi-Session Chat
  */
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { ROLE_CONFIG } from '../../constants';
-import { apiGetChatSessions, apiGetChatSessionDetail, apiDeleteChatSession } from '../../services/chatService';
+import {
+  apiGetChatSessions,
+  apiGetChatSessionDetail,
+  apiDeleteChatSession,
+  apiRenameChatSession,
+} from '../../services/chatService';
+import ConfirmDeleteModal from '../../shared/components/ConfirmDeleteModal';
 import PlatformSidebar from './components/sidebar/PlatformSidebar';
 import PlatformDashboardPage from './pages/PlatformDashboardPage';
 import DepartmentUsersPage from './pages/DepartmentUsersPage';
-import UserProfilePage from './pages/UserProfilePage';
 import PlatformSettingsModal from './components/settings/PlatformSettingsModal';
+import UserProfileModal from './components/profile/UserProfileModal';
 import styles from './styles/platform_center.module.css';
 
 export default function PlatformCenterLayout() {
   const { auth, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'team' | 'profile'
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'team'
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('platformSidebarOpen');
@@ -26,11 +34,16 @@ export default function PlatformCenterLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   // MongoDB Chat Sessions State
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [activeSession, setActiveSession] = useState(null);
+
+  // Session Deletion Confirmation Modal State
+  const [sessionToDelete, setSessionToDelete] = useState(null);
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
 
   const roleConf = ROLE_CONFIG[auth.role] || {
     label: auth.role || 'Scoped User',
@@ -94,16 +107,51 @@ export default function PlatformCenterLayout() {
     }
   }
 
-  async function handleDeleteSession(sessionId) {
+  function requestDeleteSession(sessionId) {
+    const sessionObj = sessions.find((s) => (s.session_id || s.id) === sessionId);
+    setSessionToDelete({
+      id: sessionId,
+      title: sessionObj?.title || 'Chat Conversation',
+    });
+  }
+
+  async function confirmDeleteSession() {
+    if (!sessionToDelete) return;
+    const sessionId = sessionToDelete.id;
+    setIsDeletingSession(true);
     try {
       await apiDeleteChatSession(auth.token, sessionId);
       setSessions((prev) => prev.filter((s) => (s.session_id || s.id) !== sessionId));
       if (activeSessionId === sessionId) {
         handleNewChat();
       }
+      toast.delete('Chat conversation deleted successfully.', 'Session Removed');
+      setSessionToDelete(null);
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') logout();
       console.error('Error deleting chat session:', err);
+      toast.error('Failed to delete chat session.', 'Error');
+      setSessionToDelete(null);
+    } finally {
+      setIsDeletingSession(false);
+    }
+  }
+
+  async function handleRenameSession(sessionId, newTitle) {
+    if (!newTitle || !newTitle.trim()) return;
+    try {
+      await apiRenameChatSession(auth.token, sessionId, newTitle.trim());
+      setSessions((prev) =>
+        prev.map((s) => ((s.session_id || s.id) === sessionId ? { ...s, title: newTitle.trim() } : s))
+      );
+      if (activeSessionId === sessionId) {
+        setActiveSession((prev) => (prev ? { ...prev, title: newTitle.trim() } : prev));
+      }
+      toast.success(`Conversation title updated to "${newTitle.trim()}".`, 'Session Renamed');
+    } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') logout();
+      console.error('Error renaming chat session:', err);
+      toast.error('Failed to rename session.', 'Error');
     }
   }
 
@@ -158,38 +206,66 @@ export default function PlatformCenterLayout() {
         sessions={sessions}
         activeSessionId={activeSessionId}
         onSelectSession={handleSelectSession}
-        onDeleteSession={handleDeleteSession}
+        onDeleteSession={requestDeleteSession}
+        onRenameSession={handleRenameSession}
         onNewChat={handleNewChat}
-        onSelectSuggestion={handleSelectSuggestion}
-        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
       />
 
-      {/* Main Active Module Screen */}
+      {/* Main Board */}
       <main className={styles.main}>
         {activeTab === 'chat' && (
           <PlatformDashboardPage
             auth={auth}
             logout={logout}
-            activeSessionId={activeSessionId}
+            roleConf={roleConf}
+            selectedSuggestion={selectedSuggestion}
+            onSelectSuggestion={handleSelectSuggestion}
             activeSession={activeSession}
+            activeSessionId={activeSessionId}
             onQueryCompleted={handleQueryCompleted}
             onNewChat={handleNewChat}
-            selectedSuggestion={selectedSuggestion}
-            onClearSelectedSuggestion={() => setSelectedSuggestion(null)}
             sidebarOpen={sidebarOpen}
             toggleSidebar={toggleSidebar}
             setMobileOpen={setMobileOpen}
           />
         )}
-        {activeTab === 'team' && <DepartmentUsersPage auth={auth} logout={logout} setMobileOpen={setMobileOpen} />}
-        {activeTab === 'profile' && <UserProfilePage auth={auth} setMobileOpen={setMobileOpen} />}
+
+        {activeTab === 'team' && (
+          <DepartmentUsersPage
+            auth={auth}
+            roleConf={roleConf}
+            setMobileOpen={setMobileOpen}
+          />
+        )}
       </main>
 
-      {/* Platform Settings Modal */}
+      {/* Profile Modal */}
+      <UserProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        auth={auth}
+        logout={logout}
+      />
+
+      {/* Settings Modal */}
       <PlatformSettingsModal
         isOpen={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        roleConf={roleConf}
+        auth={auth}
+        logout={logout}
+      />
+
+      {/* Delete Chat Session Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(sessionToDelete)}
+        title="Delete Chat Session"
+        itemName={sessionToDelete?.title}
+        itemType="conversation"
+        description="This conversation thread and all its prompt history will be permanently erased from your account."
+        onCancel={() => setSessionToDelete(null)}
+        onConfirm={confirmDeleteSession}
+        loading={isDeletingSession}
       />
     </div>
   );

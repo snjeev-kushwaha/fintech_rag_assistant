@@ -1,0 +1,270 @@
+/**
+ * ConfirmDeleteModal.module.css — High Fidelity Styling for Delete Confirmation Dialog
+ */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.modal {
+  background: #0f172a;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 16px;
+  width: 440px;
+  max-width: 94vw;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(239, 68, 68, 0.1);
+  overflow: hidden;
+  animation: modalEnter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modalHeader {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modalHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.dangerIconTile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 2px 0;
+  line-height: 1.25;
+}
+
+.modalSubtitle {
+  font-size: 0.72rem;
+  color: #ef4444;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.modalClose {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modalClose:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+.modalBody {
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.messageText {
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.itemBadge {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemBadge code {
+  color: #fca5a5;
+  font-family: monospace;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.warningText {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.modalFooter {
+  padding: 1rem 1.35rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.cancelBtn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cancelBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.deleteConfirmBtn {
+  background: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fff;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.84rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.deleteConfirmBtn:hover {
+  background: #b91c1c;
+  box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
+}
+
+.deleteConfirmBtn:disabled,
+.cancelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   LIGHT THEME OVERRIDES
+   ══════════════════════════════════════════════════════════════════════════════ */
+:global([data-theme='light']) .modal {
+  background: #ffffff;
+  border-color: #fecaca;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.15);
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .modalHeader {
+  border-bottom-color: #f1f5f9;
+}
+
+:global([data-theme='light']) .dangerIconTile {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+:global([data-theme='light']) .modalTitle {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .modalSubtitle {
+  color: #dc2626;
+}
+
+:global([data-theme='light']) .modalClose {
+  color: #64748b;
+}
+
+:global([data-theme='light']) .modalClose:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .messageText {
+  color: #0f172a;
+}
+
+:global([data-theme='light']) .itemBadge {
+  background: #fef2f2;
+  border-color: #fee2e2;
+}
+
+:global([data-theme='light']) .itemBadge code {
+  color: #b91c1c;
+}
+
+:global([data-theme='light']) .warningText {
+  color: #475569;
+}
+
+:global([data-theme='light']) .modalFooter {
+  border-top-color: #f1f5f9;
+}
+
+:global([data-theme='light']) .cancelBtn {
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+:global([data-theme='light']) .cancelBtn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}

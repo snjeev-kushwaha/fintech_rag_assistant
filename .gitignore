@@ -5,3 +5,7 @@ backend/data/*
 frontend-react/node_modules
 frontend-react/dist
 pyrightconfig.json
+__pycache__/
+*.pyc
+*.pyo
+*.log

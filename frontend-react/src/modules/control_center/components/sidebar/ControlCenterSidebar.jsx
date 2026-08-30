@@ -1,6 +1,19 @@
 /**
- * ControlCenterSidebar.jsx — ChatGPT-style Collapsible Admin Sidebar with Settings Popup Trigger
+ * ControlCenterSidebar.jsx — Master Root Admin Sidebar with Profile Modal Trigger & Theme Toolbar
+ * Uses clean SVG iconography (no emojis)
  */
+import { useState, useRef, useEffect } from 'react';
+import { useTheme } from '../../../../context/ThemeContext';
+import {
+  IconUsers,
+  IconBuilding,
+  IconLogOut,
+  IconSun,
+  IconMoon,
+  IconPalette,
+  IconCheck,
+  IconSparkles,
+} from '../../../../shared/components/Icons';
 import styles from '../../styles/control_center.module.css';
 
 export default function ControlCenterSidebar({
@@ -12,14 +25,45 @@ export default function ControlCenterSidebar({
   setActiveTab,
   auth,
   logout,
-  onOpenSettings,
+  onOpenProfile,
 }) {
+  const { theme, setMode, colorTheme, setColorTheme, COLOR_THEMES } = useTheme();
+  const [showThemePopover, setShowThemePopover] = useState(false);
+  const popoverRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+        setShowThemePopover(false);
+      }
+    }
+    if (showThemePopover) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showThemePopover]);
+
+  const userInitials = (auth.displayName || auth.username || 'SA')
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
   return (
-    <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarExpanded : styles.sidebarCollapsed} ${mobileOpen ? styles.mobileOpen : ''}`}>
+    <aside
+      className={`${styles.sidebar} ${
+        sidebarOpen ? styles.sidebarExpanded : styles.sidebarCollapsed
+      } ${mobileOpen ? styles.mobileOpen : ''}`}
+    >
       {/* Sidebar Header */}
       <div className={styles.sidebarHeader}>
         <div className={styles.brandRow}>
-          <div className={styles.logoIcon}>⚡</div>
+          <div className={styles.logoIconTile}>
+            <IconSparkles size={18} />
+          </div>
           {sidebarOpen && (
             <div className={styles.brandText}>
               <span className={styles.brandTitle}>FinSolve Admin</span>
@@ -41,21 +85,6 @@ export default function ControlCenterSidebar({
         </button>
       </div>
 
-      {/* Admin User Card */}
-      <div
-        className={styles.adminCard}
-        data-tooltip={!sidebarOpen ? `${auth.username} (Superuser)` : undefined}
-        title={!sidebarOpen ? `${auth.username} (Superuser)` : undefined}
-      >
-        <div className={styles.avatar}>👑</div>
-        {sidebarOpen && (
-          <div className={styles.adminInfo}>
-            <div className={styles.adminUsername}>{auth.username}</div>
-            <span className={styles.adminBadge}>Superuser</span>
-          </div>
-        )}
-      </div>
-
       {/* Navigation Menu */}
       <nav className={styles.navMenu}>
         <button
@@ -68,11 +97,15 @@ export default function ControlCenterSidebar({
           data-tooltip={!sidebarOpen ? 'User Accounts' : undefined}
           title={!sidebarOpen ? 'User Accounts' : undefined}
         >
-          <span className={styles.navIcon}>👤</span>
+          <span className={styles.navIcon}>
+            <IconUsers size={18} />
+          </span>
           {sidebarOpen && <span className={styles.navLabel}>User Accounts</span>}
         </button>
         <button
-          className={`${styles.navItem} ${activeTab === 'departments' || activeTab === 'dept-detail' ? styles.activeNav : ''}`}
+          className={`${styles.navItem} ${
+            activeTab === 'departments' || activeTab === 'dept-detail' ? styles.activeNav : ''
+          }`}
           onClick={() => {
             setActiveTab('departments');
             setMobileOpen(false);
@@ -81,38 +114,138 @@ export default function ControlCenterSidebar({
           data-tooltip={!sidebarOpen ? 'Department Tracker' : undefined}
           title={!sidebarOpen ? 'Department Tracker' : undefined}
         >
-          <span className={styles.navIcon}>📊</span>
+          <span className={styles.navIcon}>
+            <IconBuilding size={18} />
+          </span>
           {sidebarOpen && <span className={styles.navLabel}>Department Tracker</span>}
-        </button>
-
-        {/* Settings Popup Nav Item */}
-        <button
-          className={styles.navItem}
-          onClick={() => {
-            if (onOpenSettings) onOpenSettings();
-            setMobileOpen(false);
-          }}
-          id="nav-settings-tab"
-          data-tooltip={!sidebarOpen ? 'Settings' : undefined}
-          title={!sidebarOpen ? 'Settings' : undefined}
-        >
-          <span className={styles.navIcon}>⚙️</span>
-          {sidebarOpen && <span className={styles.navLabel}>Settings</span>}
         </button>
       </nav>
 
-      {/* Sign Out Button */}
-      <div className={styles.sidebarFooter}>
-        <button
-          className={styles.logoutBtn}
-          onClick={logout}
-          id="logout-btn"
-          data-tooltip={!sidebarOpen ? 'Sign Out' : undefined}
-          title={!sidebarOpen ? 'Sign Out' : undefined}
+      {/* Admin Profile & Theme Controls Footer */}
+      <div className={styles.sidebarFooter} ref={popoverRef}>
+        {/* Floating Color Theme Popover */}
+        {showThemePopover && sidebarOpen && (
+          <div className={styles.themePopover}>
+            <div className={styles.themePopoverHeader}>
+              <div className={styles.themePopoverTitle}>Color theme</div>
+              <div className={styles.themePopoverSubtitle}>Independent from light and dark mode</div>
+            </div>
+            <div className={styles.themePopoverList}>
+              {COLOR_THEMES.map((item) => {
+                const isSelected = item.id === colorTheme;
+                return (
+                  <button
+                    key={item.id}
+                    className={`${styles.themePopoverItem} ${isSelected ? styles.activeThemePopoverItem : ''}`}
+                    onClick={() => {
+                      setColorTheme(item.id);
+                      setShowThemePopover(false);
+                    }}
+                  >
+                    <div className={styles.themeItemLeft}>
+                      <div
+                        className={styles.themeSwatch}
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <div className={styles.themeItemText}>
+                        <span className={styles.themeName}>{item.name}</span>
+                        <span className={styles.themeDesc}>{item.desc}</span>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className={styles.themeCheckmark}>
+                        <IconCheck size={14} />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* User Profile Card - Click to Open Centered Profile Details Modal */}
+        <div
+          className={styles.userCard}
+          onClick={() => {
+            setShowThemePopover(false);
+            if (onOpenProfile) onOpenProfile();
+            setMobileOpen(false);
+          }}
+          title={!sidebarOpen ? `${auth.username} (Superuser)` : 'Click to view Profile Details'}
+          data-tooltip={!sidebarOpen ? `${auth.username} (Superuser)` : undefined}
+          role="button"
+          tabIndex={0}
         >
-          <span className={styles.logoutIcon}>🚪</span>
-          {sidebarOpen && <span className={styles.logoutLabel}>Sign Out</span>}
-        </button>
+          <div className={styles.userInfoLeft}>
+            <div className={styles.userAvatar}>{userInitials}</div>
+            {sidebarOpen && (
+              <div className={styles.userText}>
+                <span className={styles.userName}>{auth.displayName || auth.username || 'System Admin'}</span>
+                <div className={styles.userRoleRow}>
+                  <span>Superuser</span>
+                  <span className={styles.statusDot}></span>
+                </div>
+              </div>
+            )}
+          </div>
+          {sidebarOpen && (
+            <button
+              className={styles.miniLogoutBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                logout();
+              }}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <IconLogOut size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Light / Dark Mode & Theme Palette Toolbar */}
+        {sidebarOpen ? (
+          <div className={styles.themeToolbar}>
+            <div className={styles.themeModeGroup}>
+              <button
+                className={`${styles.themeModeBtn} ${theme === 'light' ? styles.activeThemeMode : ''}`}
+                onClick={() => setMode('light')}
+                title="Light Mode"
+              >
+                <IconSun size={14} />
+                <span>Light</span>
+              </button>
+              <button
+                className={`${styles.themeModeBtn} ${theme === 'dark' ? styles.activeThemeMode : ''}`}
+                onClick={() => setMode('dark')}
+                title="Dark Mode"
+              >
+                <IconMoon size={14} />
+                <span>Dark</span>
+              </button>
+            </div>
+            <button
+              className={`${styles.paletteBtn} ${showThemePopover ? styles.activePaletteBtn : ''}`}
+              onClick={() => setShowThemePopover((prev) => !prev)}
+              title="Color Themes"
+              aria-label="Select Color Theme"
+            >
+              <IconPalette size={15} />
+            </button>
+          </div>
+        ) : (
+          <div className={styles.collapsedThemeToolbar}>
+            <button
+              className={styles.collapsedThemeBtn}
+              onClick={() => setMode(theme === 'light' ? 'dark' : 'light')}
+              data-tooltip={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? <IconSun size={18} /> : <IconMoon size={18} />}
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

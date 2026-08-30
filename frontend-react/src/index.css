@@ -17,6 +17,13 @@
   --border-dim:    rgba(255, 255, 255, 0.08);
   --border-mid:    rgba(255, 255, 255, 0.12);
 
+  /* Active Color Theme Accents */
+  --theme-accent:          #10a37f;
+  --theme-accent-color:    #e4e4e7;
+  --theme-accent-hover:    #0e8b6d;
+  --theme-accent-subtle:   rgba(16, 163, 127, 0.15);
+  --theme-accent-gradient: linear-gradient(135deg, #10a37f, #059669);
+
   /* Brand */
   --indigo-400:  #818cf8;
   --indigo-500:  #6366f1;

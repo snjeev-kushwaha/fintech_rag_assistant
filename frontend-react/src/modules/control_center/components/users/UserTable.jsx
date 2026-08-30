@@ -1,7 +1,9 @@
 /**
- * UserTable.jsx — Registered User Accounts Table
+ * UserTable.jsx — Enterprise Grade User Accounts Data Table
+ * Clean SVG iconography, initials avatar badges, and sleek icon-only actions
  */
 import { ROLE_CONFIG } from '../../../../constants';
+import { getDepartmentIcon, IconEdit, IconTrash, IconKey } from '../../../../shared/components/Icons';
 import styles from '../../styles/control_center.module.css';
 
 export default function UserTable({
@@ -15,9 +17,9 @@ export default function UserTable({
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>Full Name</th>
+            <th>User</th>
             <th>Username</th>
-            <th>Department (Role)</th>
+            <th>Department / Role</th>
             <th>Account Status</th>
             <th style={{ textAlign: 'right' }}>Actions</th>
           </tr>
@@ -27,47 +29,98 @@ export default function UserTable({
             const deptObj = departmentsList.find((d) => d.id === u.role || d.id === u.departmentId);
             const conf = ROLE_CONFIG[u.role] || (deptObj ? {
               color: deptObj.status === 'Inactive' ? '#64748b' : '#3b82f6',
-              emoji: deptObj.image && !deptObj.image.startsWith('http') ? deptObj.image : '🏢',
               label: deptObj.name
-            } : { color: '#94a3b8', emoji: '👤', label: u.role });
+            } : { color: '#94a3b8', label: u.role });
+
+            const roleColor = conf.color || '#3b82f6';
+            const initials = (u.full_name || u.username || 'U')
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .substring(0, 2)
+              .toUpperCase();
+
+            const isRoot = u.username === 'root';
 
             return (
-              <tr key={u.username}>
-                <td className={styles.fullNameCell}>{u.full_name}</td>
-                <td className={styles.usernameCell}><code>{u.username}</code></td>
+              <tr key={u.username} className={styles.tableRow}>
+                {/* User Info Column */}
                 <td>
-                  <span
-                    className={styles.badge}
-                    style={{
-                      color: conf.color,
-                      borderColor: `${conf.color}55`,
-                      background: `${conf.color}15`,
-                    }}
-                  >
-                    {conf.emoji} {conf.label}
+                  <div className={styles.userCellWrap}>
+                    <div
+                      className={styles.userTableAvatar}
+                      style={{
+                        background: `linear-gradient(135deg, ${roleColor}, ${roleColor}99)`,
+                        boxShadow: `0 2px 8px ${roleColor}33`,
+                      }}
+                    >
+                      {initials}
+                    </div>
+                    <div className={styles.userMeta}>
+                      <span className={styles.userFullName}>{u.full_name}</span>
+                      <span className={styles.userHandle}>@{u.username}</span>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Monospace Username Pill */}
+                <td>
+                  <span className={styles.usernamePill}>
+                    <IconKey size={12} className={styles.keyIcon} />
+                    <code>{u.username}</code>
                   </span>
                 </td>
+
+                {/* Enterprise Department Role Badge */}
                 <td>
-                  <span className={u.is_active ? styles.statusActive : styles.statusInactive}>
+                  <span
+                    className={styles.roleBadge}
+                    style={{
+                      color: roleColor,
+                      backgroundColor: `${roleColor}12`,
+                      borderColor: `${roleColor}33`,
+                    }}
+                  >
+                    <span className={styles.roleIconWrapper}>
+                      {getDepartmentIcon(u.role, 13)}
+                    </span>
+                    <span>{conf.label}</span>
+                  </span>
+                </td>
+
+                {/* Status Column */}
+                <td>
+                  <span
+                    className={`${styles.deptStatusPill} ${
+                      u.is_active ? styles.statusActivePill : styles.statusInactivePill
+                    }`}
+                  >
+                    <span className={styles.statusPulseDot} />
                     {u.is_active ? 'Active' : 'Disabled'}
                   </span>
                 </td>
+
+                {/* Icon-Only Actions Column */}
                 <td style={{ textAlign: 'right' }}>
                   <div className={styles.actionsCell}>
                     <button
-                      className={styles.editBtn}
+                      className={styles.tableIconBtn}
                       onClick={() => onEditUser(u)}
+                      title={`Edit ${u.full_name} (@${u.username})`}
+                      aria-label={`Edit ${u.full_name}`}
                       id={`edit-user-${u.username}`}
                     >
-                      ✏️ Edit
+                      <IconEdit size={15} />
                     </button>
-                    {u.username !== 'root' && (
+                    {!isRoot && (
                       <button
-                        className={styles.deleteBtn}
+                        className={`${styles.tableIconBtn} ${styles.deleteIconBtn}`}
                         onClick={() => onDeleteUser(u.username)}
+                        title={`Delete @${u.username}`}
+                        aria-label={`Delete ${u.username}`}
                         id={`delete-user-${u.username}`}
                       >
-                        🗑️ Delete
+                        <IconTrash size={15} />
                       </button>
                     )}
                   </div>

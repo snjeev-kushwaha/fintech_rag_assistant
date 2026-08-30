@@ -267,3 +267,36 @@ def ingest_single_file(file_path: Path, department: str) -> int:
 
     print(f"[VectorStore] Successfully ingested {len(chunks)} chunks from {file_path.name} into '{collection_name}' collection.")
     return len(chunks)
+
+
+def delete_collection_for_department(department: str):
+    """
+    Safely delete ChromaDB vector collection associated with a department.
+    """
+    try:
+        collection_name = _to_collection_name(department)
+        client = get_chroma_client()
+        existing = [col.name for col in client.list_collections()]
+        if collection_name in existing:
+            client.delete_collection(collection_name)
+            print(f"[VectorStore] Deleted ChromaDB collection: {collection_name}")
+    except Exception as e:
+        print(f"[VectorStore] Warning: Could not delete collection for '{department}': {e}")
+
+
+def reingest_department_directory(department: str) -> int:
+    """
+    Clean and re-ingest all document files for a single department.
+    """
+    delete_collection_for_department(department)
+    dept_dir = DATA_DIR / department
+    if not dept_dir.exists() or not dept_dir.is_dir():
+        return 0
+
+    total_chunks = 0
+    for doc_file in sorted(dept_dir.glob("*.*")):
+        if doc_file.is_file() and not doc_file.name.startswith("."):
+            chunks = ingest_single_file(doc_file, department)
+            total_chunks += chunks
+
+    return total_chunks

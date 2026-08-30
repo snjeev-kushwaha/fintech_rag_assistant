@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { ROLE_CONFIG } from '../../../constants';
 import { apiChat, apiUploadAttachment } from '../../../services/chatService';
 import { useTheme } from '../../../context/ThemeContext';
+import { useToast } from '../../../context/ToastContext';
 import ChatMessageList from '../components/chat/ChatMessageList';
 import ChatInputForm from '../components/chat/ChatInputForm';
 import ErrorBanner from '../../../shared/components/ErrorBanner';
@@ -27,6 +28,7 @@ export default function PlatformDashboardPage({
   setMobileOpen,
 }) {
   const { theme, toggleTheme } = useTheme();
+  const { toast } = useToast();
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#10a37f',
     emoji: auth.roleEmoji || '🏢',
@@ -40,57 +42,52 @@ export default function PlatformDashboardPage({
     sources: [],
   };
 
-  const [messages, setMessages] = useState(() => {
-    return activeSession && activeSession.messages && activeSession.messages.length > 0
-      ? activeSession.messages
-      : [defaultWelcomeMessage];
-  });
-
+  const [messages, setMessages] = useState([defaultWelcomeMessage]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Sync messages when activeSession changes
+  // Sync with selected session
   useEffect(() => {
     if (activeSession && activeSession.messages) {
-      setMessages(activeSession.messages);
+      setMessages(activeSession.messages.length > 0 ? activeSession.messages : [defaultWelcomeMessage]);
     } else {
       setMessages([defaultWelcomeMessage]);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSession?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSessionId, activeSession]);
 
-  // Execute selected prompt suggestion from hero grid
+  // Handle suggestion selection
   useEffect(() => {
     if (selectedSuggestion) {
-      sendQuery(selectedSuggestion);
-      if (onClearSelectedSuggestion) onClearSelectedSuggestion();
+      setInput(selectedSuggestion);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSuggestion]);
 
-  async function sendQuery(text) {
-    if (!text || !text.trim() || loading) return;
+  async function sendQuery(queryText) {
+    if (!queryText.trim() || loading) return;
 
-    const userText = text.trim();
+    const userMsg = {
+      role: 'user',
+      content: queryText,
+      timestamp: timestamp(),
+    };
+
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
     setInput('');
+    setLoading(true);
     setError('');
 
-    const userMsg = { role: 'user', content: userText, timestamp: timestamp() };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
-    setLoading(true);
-
     try {
-      const data = await apiChat(userText, auth.token, activeSessionId);
+      const data = await apiChat(queryText, auth.token, activeSessionId);
       const botMsg = {
         role: 'bot',
-        content: data.answer || 'No response returned.',
+        content: data.answer,
         sources: data.sources || [],
         timestamp: timestamp(),
       };
-      const finalMessages = [...updatedMessages, botMsg];
-      setMessages(finalMessages);
+      setMessages([...newMessages, botMsg]);
 
       if (onQueryCompleted) {
         onQueryCompleted(data.session_id);
@@ -125,11 +122,17 @@ export default function PlatformDashboardPage({
       if (onQueryCompleted) {
         onQueryCompleted(activeSessionId);
       }
+
+      toast.success(
+        `Uploaded "${result.filename}" to ${result.department} folder (${result.chunks_ingested} chunks indexed).`,
+        'Document Uploaded'
+      );
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') {
         logout();
       } else {
         setError(err.message || 'File upload failed.');
+        toast.error(err.message || 'File upload failed.', 'Upload Error');
       }
     } finally {
       setLoading(false);
@@ -153,23 +156,31 @@ export default function PlatformDashboardPage({
       {/* ChatGPT Top Navigation Bar */}
       <header className={styles.chatPageHeader}>
         <div className={styles.chatHeaderLeft}>
+          {/* Mobile-Only Drawer Toggle */}
           <button
+            type="button"
             className={styles.mobileHamburgerBtn}
             onClick={() => setMobileOpen((open) => !open)}
             title="Open navigation menu"
             aria-label="Open navigation menu"
           >
-            ☰
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
           </button>
 
+          {/* Desktop-Only Toggle: Rendered ONLY when sidebar is collapsed */}
           {!sidebarOpen && (
             <button
+              type="button"
               className={styles.headerToggleBtn}
               onClick={toggleSidebar}
               title="Open sidebar"
               aria-label="Open sidebar"
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <line x1="9" y1="3" x2="9" y2="21" />
               </svg>
