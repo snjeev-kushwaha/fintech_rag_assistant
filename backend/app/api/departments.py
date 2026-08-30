@@ -13,6 +13,12 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 
 from backend.app.core.config import DATA_DIR
 from backend.app.core.security import get_current_user, require_root
+from backend.app.core.security_utils import (
+    sanitize_filename,
+    validate_department_id,
+    safe_resolve_data_path,
+    validate_file_size,
+)
 from backend.app.models.schemas import (
     DepartmentCreate,
     DepartmentUpdate,
@@ -74,16 +80,16 @@ async def create_department(request: DepartmentCreate, admin: UserInfo = Depends
     """
     try:
         new_dept = create_department_record(
-            name=request.name,
-            description=request.description,
+            name=request.name.strip(),
+            description=request.description.strip(),
             image=request.image,
             status=request.status or "Active",
             created_by=admin.username,
-            custom_id=request.id,
+            custom_id=request.id.strip() if request.id else None,
         )
 
-        # Automatically provision physical department data directory
-        dept_dir = DATA_DIR / new_dept.id
+        # Automatically provision physical department data directory safely
+        dept_dir = safe_resolve_data_path(new_dept.id)
         dept_dir.mkdir(parents=True, exist_ok=True)
 
         # Create starter overview.txt if folder is currently empty
@@ -127,26 +133,31 @@ async def create_department(request: DepartmentCreate, admin: UserInfo = Depends
 
 
 @router.put("/{dept_id}", response_model=DepartmentResponse)
-async def update_department(dept_id: str, request: DepartmentUpdate, admin: UserInfo = Depends(require_root)):
-    """Update department details in MongoDB."""
+async def update_department(
+    dept_id: str,
+    request: DepartmentUpdate,
+    admin: UserInfo = Depends(require_root),
+):
+    """Update department name, description, icon image, or status."""
     try:
-        updated = update_department_record(
-            dept_id=dept_id,
-            name=request.name,
-            description=request.description,
+        clean_dept_id = validate_department_id(dept_id)
+        updated_dept = update_department_record(
+            dept_id=clean_dept_id,
+            name=request.name.strip() if request.name else None,
+            description=request.description.strip() if request.description else None,
             image=request.image,
             status=request.status,
         )
         return DepartmentResponse(
-            id=updated.id,
-            name=updated.name,
-            description=updated.description,
-            image=updated.image,
-            status=updated.status,
-            createdBy=updated.createdBy,
-            createdAt=updated.createdAt,
-            updatedAt=updated.updatedAt,
-            user_count=get_department_user_count(updated.id),
+            id=updated_dept.id,
+            name=updated_dept.name,
+            description=updated_dept.description,
+            image=updated_dept.image,
+            status=updated_dept.status,
+            createdBy=updated_dept.createdBy,
+            createdAt=updated_dept.createdAt,
+            updatedAt=updated_dept.updatedAt,
+            user_count=get_department_user_count(clean_dept_id),
         )
     except ValueError as e:
         raise HTTPException(
@@ -158,21 +169,21 @@ async def update_department(dept_id: str, request: DepartmentUpdate, admin: User
 @router.delete("/{dept_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_department(dept_id: str, admin: UserInfo = Depends(require_root)):
     """
-    Delete a department from MongoDB, permanently remove its physical
-    folder in backend/data/<dept_id>/, and clear its ChromaDB vector collection.
-    Fails if active user accounts are currently assigned to this department.
+    Delete a department from MongoDB, physically erase its data directory (backend/data/<dept_id>/),
+    and drop its corresponding vector collection from ChromaDB.
     """
+    clean_dept_id = validate_department_id(dept_id)
     try:
-        delete_department_record(dept_id)
+        delete_department_record(clean_dept_id)
 
-        # 1. Automatically delete physical folder and all files inside backend/data/<dept_id>
-        dept_dir = DATA_DIR / dept_id
+        # Physically erase data folder from disk safely
+        dept_dir = safe_resolve_data_path(clean_dept_id)
         if dept_dir.exists() and dept_dir.is_dir():
-            shutil.rmtree(dept_dir, ignore_errors=True)
-            print(f"[Departments] Automatically deleted physical data folder: {dept_dir}")
+            shutil.rmtree(dept_dir)
+            print(f"[Departments] Erased department directory: {dept_dir}")
 
-        # 2. Automatically delete ChromaDB vector collection
-        delete_collection_for_department(dept_id)
+        # Drop department collection from ChromaDB
+        delete_collection_for_department(clean_dept_id)
 
     except ValueError as e:
         raise HTTPException(
@@ -190,11 +201,12 @@ async def get_department_files(dept_id: str, user: UserInfo = Depends(get_curren
     """
     List all knowledge documents currently stored in backend/data/<dept_id>/.
     """
-    dept = get_department_by_id(dept_id)
+    clean_dept_id = validate_department_id(dept_id)
+    dept = get_department_by_id(clean_dept_id)
     if not dept:
         raise HTTPException(status_code=404, detail=f"Department '{dept_id}' not found.")
 
-    dept_dir = DATA_DIR / dept_id
+    dept_dir = safe_resolve_data_path(clean_dept_id)
     if not dept_dir.exists() or not dept_dir.is_dir():
         return []
 
@@ -224,34 +236,38 @@ async def upload_department_file(
     Upload a new knowledge document into backend/data/<dept_id>/
     and automatically index its chunks into ChromaDB vector store.
     """
-    dept = get_department_by_id(dept_id)
+    clean_dept_id = validate_department_id(dept_id)
+    dept = get_department_by_id(clean_dept_id)
     if not dept:
         raise HTTPException(status_code=404, detail=f"Department '{dept_id}' not found.")
 
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file selected for upload.")
 
-    dept_dir = DATA_DIR / dept_id
-    dept_dir.mkdir(parents=True, exist_ok=True)
+    safe_filename = sanitize_filename(file.filename)
+    file_path = safe_resolve_data_path(clean_dept_id, safe_filename)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    file_path = dept_dir / file.filename
     try:
         content_bytes = await file.read()
+        validate_file_size(content_bytes)
         file_path.write_bytes(content_bytes)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to write file to disk: {str(e)}")
 
     # Ingest file into ChromaDB vector store
-    chunks_ingested = ingest_single_file(file_path, dept_id)
+    chunks_ingested = ingest_single_file(file_path, clean_dept_id)
 
     stat = file_path.stat()
     return {
-        "filename": file.filename,
-        "department": dept_id,
+        "filename": safe_filename,
+        "department": clean_dept_id,
         "size_bytes": stat.st_size,
         "size_formatted": _format_file_size(stat.st_size),
         "chunks_ingested": chunks_ingested,
-        "message": f"Successfully saved '{file.filename}' to {dept.name} knowledge folder and indexed {chunks_ingested} text chunks.",
+        "message": f"Successfully saved '{safe_filename}' to {dept.name} knowledge folder and indexed {chunks_ingested} text chunks.",
     }
 
 
@@ -265,13 +281,15 @@ async def delete_department_file(
     Delete a specific document from backend/data/<dept_id>/
     and re-sync the ChromaDB vector collection to keep data folder consistent.
     """
-    dept = get_department_by_id(dept_id)
+    clean_dept_id = validate_department_id(dept_id)
+    dept = get_department_by_id(clean_dept_id)
     if not dept:
         raise HTTPException(status_code=404, detail=f"Department '{dept_id}' not found.")
 
-    file_path = DATA_DIR / dept_id / filename
+    safe_filename = sanitize_filename(filename)
+    file_path = safe_resolve_data_path(clean_dept_id, safe_filename)
     if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail=f"File '{filename}' not found in department '{dept_id}'.")
+        raise HTTPException(status_code=404, detail=f"File '{safe_filename}' not found in department '{dept_id}'.")
 
     try:
         file_path.unlink()
@@ -280,11 +298,11 @@ async def delete_department_file(
         raise HTTPException(status_code=500, detail=f"Failed to delete file from disk: {str(e)}")
 
     # Re-sync ChromaDB vector store for this department
-    remaining_chunks = reingest_department_directory(dept_id)
+    remaining_chunks = reingest_department_directory(clean_dept_id)
 
     return {
-        "filename": filename,
-        "department": dept_id,
+        "filename": safe_filename,
+        "department": clean_dept_id,
         "remaining_chunks": remaining_chunks,
-        "message": f"File '{filename}' removed and knowledge vector store re-indexed.",
+        "message": f"File '{safe_filename}' removed and knowledge vector store re-indexed.",
     }

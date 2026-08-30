@@ -108,6 +108,12 @@ async def chat(
     )
 
 
+from backend.app.core.security_utils import (
+    sanitize_filename,
+    safe_resolve_data_path,
+    validate_file_size,
+)
+
 @router.post("/chat/upload")
 async def upload_attachment(
     file: UploadFile = File(...),
@@ -125,22 +131,25 @@ async def upload_attachment(
     else:
         dept_folder = current_user.role.lower()
 
-    target_dir = DATA_DIR / dept_folder
-    target_dir.mkdir(parents=True, exist_ok=True)
+    safe_filename = sanitize_filename(file.filename)
+    file_path = safe_resolve_data_path(dept_folder, safe_filename)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    file_path = target_dir / file.filename
     try:
         contents = await file.read()
+        validate_file_size(contents)
         file_path.write_bytes(contents)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
 
     chunks_ingested = ingest_single_file(file_path, dept_folder)
 
     return {
-        "filename": file.filename,
+        "filename": safe_filename,
         "department": dept_folder,
         "file_path": str(file_path),
         "chunks_ingested": chunks_ingested,
-        "message": f"Document '{file.filename}' uploaded to {dept_folder.title()} department data folder and indexed into knowledge base."
+        "message": f"Document '{safe_filename}' uploaded to {dept_folder.title()} department data folder and indexed into knowledge base."
     }

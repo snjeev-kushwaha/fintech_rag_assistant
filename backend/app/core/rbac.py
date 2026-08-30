@@ -92,11 +92,17 @@ def require_role(*allowed_roles: UserRole) -> Callable:
     is not in allowed_roles.
     """
     def dependency(current_user=None):
-        if current_user and current_user.role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required roles: {[r.value for r in allowed_roles]}. "
-                       f"Your role: {current_user.role.value}",
+        if current_user:
+            user_role_str = (
+                current_user.role.value
+                if hasattr(current_user.role, "value")
+                else str(current_user.role)
             )
+            allowed_values = [r.value for r in allowed_roles]
+            if user_role_str not in allowed_values:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied. Required roles: {allowed_values}. Your role: {user_role_str}",
+                )
         return current_user
     return dependency

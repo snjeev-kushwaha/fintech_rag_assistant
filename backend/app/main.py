@@ -1,6 +1,6 @@
 """
 FinSolve Technologies — RAG RBAC Chatbot
-FastAPI Application Entrypoint
+FastAPI Application Entrypoint with Enterprise Security Hardening
 """
 
 import sys
@@ -19,8 +19,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.app.core.config import settings
+from backend.app.core.middleware import SecurityHeadersMiddleware, LoginRateLimitMiddleware
 from backend.app.api.router import api_router
 from backend.app.db.departments_store import initialize_departments_db
+from backend.app.db.users_store import initialize_users_db
 from backend.app.db.vector_store import list_collections
 from backend.app.services.rag_service import get_rag_pipeline
 
@@ -37,20 +39,30 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ── CORS Middleware ───────────────────────────────────────────────────────────
+# ── Security Middlewares ──────────────────────────────────────────────────────
+
+# 1. Custom HTTP Security Headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. Login Brute-Force Rate Limiter
+app.add_middleware(LoginRateLimitMiddleware)
+
+# 3. Explicit CORS Policy (Restricted to known client hosts)
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8501",
+    "http://127.0.0.1:8501",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8501",
-        "http://127.0.0.1:8501",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "*",
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 # ── Register Modular API Routers ──────────────────────────────────────────────
@@ -63,9 +75,10 @@ app.include_router(api_router)
 @app.on_event("startup")
 async def startup_event():
     """Pre-warm the RAG pipeline and initialize database on startup."""
-    print("[API] FinSolve RBAC Chatbot starting up...")
+    print("[API] FinSolve RBAC Chatbot starting up with security middleware...")
     print(f"[API] Backend URL: {settings.backend_url}")
     initialize_departments_db()
+    initialize_users_db()
     collections = list_collections()
     if not collections:
         print("[API] [WARN] No vector collections found. Run: python scripts/ingest_data.py")
@@ -79,7 +92,7 @@ async def startup_event():
     except Exception as e:
         print(f"[API] [WARN] RAG pipeline init warning: {e}")
 
-    print("[API] [READY] FinSolve RBAC Chatbot is ready!")
+    print("[API] [READY] FinSolve RBAC Chatbot is ready and secured!")
 
 
 if __name__ == "__main__":
