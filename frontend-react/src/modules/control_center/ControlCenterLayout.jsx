@@ -1,7 +1,8 @@
 /**
- * ControlCenterLayout.jsx — Master Root Admin Module Layout with Confirmation Modals, Toast Alerts & Theme Toolbar
+ * ControlCenterLayout.jsx — Master Root Admin Module Layout with URL Routing & Confirmation Modals
  */
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
@@ -37,6 +38,9 @@ import styles from './styles/control_center.module.css';
 export default function ControlCenterLayout() {
   const { auth, logout } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = useParams();
 
   // Persistent Sidebar State
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -61,8 +65,6 @@ export default function ControlCenterLayout() {
     });
   }
 
-  const [activeTab, setActiveTab] = useState('departments'); // 'departments' | 'users' | 'dept-detail'
-
   // Data State
   const [departmentsList, setDepartmentsList] = useState([]);
   const [users, setUsers] = useState([]);
@@ -70,7 +72,6 @@ export default function ControlCenterLayout() {
   const [error, setError] = useState('');
 
   // Department Selection & Details
-  const [selectedDeptDetail, setSelectedDeptDetail] = useState(null);
   const [deptUserSearchTerm, setDeptUserSearchTerm] = useState('');
   const [deptUserPage, setDeptUserPage] = useState(1);
   const DEPT_PAGE_SIZE = 5;
@@ -114,6 +115,24 @@ export default function ControlCenterLayout() {
 
   // Filter State — Users
   const [userSearchTerm, setUserSearchTerm] = useState('');
+
+  // Determine active view from URL pathname
+  const isUsers = location.pathname.startsWith('/admin/users');
+  const isDeptDetail =
+    location.pathname.startsWith('/admin/departments/') &&
+    location.pathname !== '/admin/departments' &&
+    location.pathname !== '/admin/departments/';
+
+  const pathDeptId = isDeptDetail
+    ? location.pathname.replace('/admin/departments/', '').replace(/\/$/, '')
+    : params.deptId || null;
+
+  const selectedDeptDetail = pathDeptId
+    ? departmentsList.find((d) => (d.id || '').toLowerCase() === pathDeptId.toLowerCase()) || {
+        id: pathDeptId,
+        name: pathDeptId,
+      }
+    : null;
 
   // Load API Data
   async function fetchUsers() {
@@ -270,9 +289,8 @@ export default function ControlCenterLayout() {
         setDeleteModalState((prev) => ({ ...prev, loading: true }));
         try {
           await apiDeleteDepartment(dept.id, auth.token);
-          if (selectedDeptDetail?.id === dept.id) {
-            setActiveTab('departments');
-            setSelectedDeptDetail(null);
+          if (pathDeptId === dept.id) {
+            navigate('/admin/departments');
           }
           await fetchDepartments();
           setDeleteModalState({ isOpen: false, onConfirm: null, loading: false });
@@ -291,10 +309,9 @@ export default function ControlCenterLayout() {
   }
 
   function viewDeptDetails(dept) {
-    setSelectedDeptDetail(dept);
     setDeptUserSearchTerm('');
     setDeptUserPage(1);
-    setActiveTab('dept-detail');
+    navigate(`/admin/departments/${dept.id}`);
   }
 
   // Handlers — User
@@ -478,8 +495,6 @@ export default function ControlCenterLayout() {
         toggleSidebar={toggleSidebar}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         auth={auth}
         logout={logout}
         onOpenProfile={() => setShowProfileModal(true)}
@@ -495,23 +510,11 @@ export default function ControlCenterLayout() {
           closeClassName={styles.closeError}
         />
 
-        {activeTab === 'departments' && (
-          <DepartmentList
-            departmentsList={departmentsList}
-            users={users}
-            onViewDetails={viewDeptDetails}
-            onEdit={openEditDeptModal}
-            onDelete={requestDeleteDepartment}
-            onOpenCreateModal={openCreateDeptModal}
-            setMobileOpen={setMobileOpen}
-          />
-        )}
-
-        {activeTab === 'dept-detail' && (
+        {isDeptDetail && (
           <DepartmentDetails
             selectedDeptDetail={selectedDeptDetail}
             departmentsList={departmentsList}
-            onBack={() => setActiveTab('departments')}
+            onBack={() => navigate('/admin/departments')}
             deptUserSearchTerm={deptUserSearchTerm}
             setDeptUserSearchTerm={setDeptUserSearchTerm}
             deptUserPage={deptUserPage}
@@ -529,7 +532,7 @@ export default function ControlCenterLayout() {
           />
         )}
 
-        {activeTab === 'users' && (
+        {!isDeptDetail && isUsers && (
           <UserList
             users={users}
             filteredUsers={filteredUsers}
@@ -540,6 +543,18 @@ export default function ControlCenterLayout() {
             onOpenCreateModal={openCreateUserModal}
             onEditUser={openEditUserModal}
             onDeleteUser={requestDeleteUser}
+            setMobileOpen={setMobileOpen}
+          />
+        )}
+
+        {!isDeptDetail && !isUsers && (
+          <DepartmentList
+            departmentsList={departmentsList}
+            users={users}
+            onViewDetails={viewDeptDetails}
+            onEdit={openEditDeptModal}
+            onDelete={requestDeleteDepartment}
+            onOpenCreateModal={openCreateDeptModal}
             setMobileOpen={setMobileOpen}
           />
         )}

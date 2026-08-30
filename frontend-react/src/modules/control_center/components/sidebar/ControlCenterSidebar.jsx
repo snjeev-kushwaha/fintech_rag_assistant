@@ -1,8 +1,9 @@
 /**
- * ControlCenterSidebar.jsx — Master Root Admin Sidebar with Profile Modal Trigger & Theme Toolbar
+ * ControlCenterSidebar.jsx — Master Root Admin Sidebar with URL Navigation & Theme Controls
  * Uses clean SVG iconography (no emojis)
  */
 import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../../../context/ThemeContext';
 import {
   IconUsers,
@@ -21,15 +22,21 @@ export default function ControlCenterSidebar({
   toggleSidebar,
   mobileOpen,
   setMobileOpen,
-  activeTab,
-  setActiveTab,
   auth,
   logout,
   onOpenProfile,
 }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setMode, colorTheme, setColorTheme, COLOR_THEMES } = useTheme();
   const [showThemePopover, setShowThemePopover] = useState(false);
   const popoverRef = useRef(null);
+
+  const isUsersActive = location.pathname.startsWith('/admin/users');
+  const isDeptsActive =
+    location.pathname.startsWith('/admin/departments') ||
+    location.pathname === '/admin' ||
+    location.pathname === '/admin/';
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -88,9 +95,9 @@ export default function ControlCenterSidebar({
       {/* Navigation Menu */}
       <nav className={styles.navMenu}>
         <button
-          className={`${styles.navItem} ${activeTab === 'users' ? styles.activeNav : ''}`}
+          className={`${styles.navItem} ${isUsersActive ? styles.activeNav : ''}`}
           onClick={() => {
-            setActiveTab('users');
+            navigate('/admin/users');
             setMobileOpen(false);
           }}
           id="nav-users-tab"
@@ -103,11 +110,9 @@ export default function ControlCenterSidebar({
           {sidebarOpen && <span className={styles.navLabel}>User Accounts</span>}
         </button>
         <button
-          className={`${styles.navItem} ${
-            activeTab === 'departments' || activeTab === 'dept-detail' ? styles.activeNav : ''
-          }`}
+          className={`${styles.navItem} ${isDeptsActive ? styles.activeNav : ''}`}
           onClick={() => {
-            setActiveTab('departments');
+            navigate('/admin/departments');
             setMobileOpen(false);
           }}
           id="nav-departments-tab"
@@ -143,13 +148,13 @@ export default function ControlCenterSidebar({
                     }}
                   >
                     <div className={styles.themeItemLeft}>
-                      <div
+                      <span
                         className={styles.themeSwatch}
-                        style={{ backgroundColor: item.color }}
+                        style={{ background: item.primary }}
                       />
                       <div className={styles.themeItemText}>
                         <span className={styles.themeName}>{item.name}</span>
-                        <span className={styles.themeDesc}>{item.desc}</span>
+                        <span className={styles.themeDesc}>{item.description}</span>
                       </div>
                     </div>
                     {isSelected && (
@@ -164,28 +169,26 @@ export default function ControlCenterSidebar({
           </div>
         )}
 
-        {/* User Profile Card - Click to Open Centered Profile Details Modal */}
+        {/* 1. Admin User Card (Click to open Centered Profile Details Modal) */}
         <div
           className={styles.userCard}
-          onClick={() => {
-            setShowThemePopover(false);
-            if (onOpenProfile) onOpenProfile();
-            setMobileOpen(false);
-          }}
-          title={!sidebarOpen ? `${auth.username} (Superuser)` : 'Click to view Profile Details'}
-          data-tooltip={!sidebarOpen ? `${auth.username} (Superuser)` : undefined}
+          onClick={onOpenProfile}
+          title={!sidebarOpen ? `Administrator (${auth.username})` : 'Click to view administrator profile'}
           role="button"
           tabIndex={0}
+          onKeyDown={(e) => e.key === 'Enter' && onOpenProfile()}
         >
           <div className={styles.userInfoLeft}>
-            <div className={styles.userAvatar}>{userInitials}</div>
+            <div className={styles.userAvatar}>
+              {userInitials}
+            </div>
             {sidebarOpen && (
               <div className={styles.userText}>
-                <span className={styles.userName}>{auth.displayName || auth.username || 'System Admin'}</span>
-                <div className={styles.userRoleRow}>
-                  <span>Superuser</span>
-                  <span className={styles.statusDot}></span>
-                </div>
+                <span className={styles.userName}>{auth.displayName || 'System Admin'}</span>
+                <span className={styles.userRoleRow}>
+                  <span className={styles.statusDot} />
+                  <span>@{auth.username}</span>
+                </span>
               </div>
             )}
           </div>
@@ -196,53 +199,49 @@ export default function ControlCenterSidebar({
                 e.stopPropagation();
                 logout();
               }}
-              title="Sign Out"
-              aria-label="Sign Out"
+              title="Log out of Control Center"
+              aria-label="Log out"
+              id="admin-logout-btn"
             >
-              <IconLogOut size={14} />
+              <IconLogOut size={16} />
             </button>
           )}
         </div>
 
-        {/* Light / Dark Mode & Theme Palette Toolbar */}
-        {sidebarOpen ? (
+        {/* 2. Toolbar: Light/Dark Mode + Palette Selector (Below Profile) */}
+        {sidebarOpen && (
           <div className={styles.themeToolbar}>
             <div className={styles.themeModeGroup}>
               <button
-                className={`${styles.themeModeBtn} ${theme === 'light' ? styles.activeThemeMode : ''}`}
-                onClick={() => setMode('light')}
-                title="Light Mode"
-              >
-                <IconSun size={14} />
-                <span>Light</span>
-              </button>
-              <button
+                type="button"
                 className={`${styles.themeModeBtn} ${theme === 'dark' ? styles.activeThemeMode : ''}`}
                 onClick={() => setMode('dark')}
-                title="Dark Mode"
+                title="Switch to Dark Mode"
+                aria-label="Dark Mode"
               >
                 <IconMoon size={14} />
                 <span>Dark</span>
               </button>
+              <button
+                type="button"
+                className={`${styles.themeModeBtn} ${theme === 'light' ? styles.activeThemeMode : ''}`}
+                onClick={() => setMode('light')}
+                title="Switch to Light Mode"
+                aria-label="Light Mode"
+              >
+                <IconSun size={14} />
+                <span>Light</span>
+              </button>
             </div>
+
             <button
+              type="button"
               className={`${styles.paletteBtn} ${showThemePopover ? styles.activePaletteBtn : ''}`}
               onClick={() => setShowThemePopover((prev) => !prev)}
-              title="Color Themes"
-              aria-label="Select Color Theme"
+              title="Change Accent Color Theme"
+              aria-label="Change Accent Color Theme"
             >
               <IconPalette size={15} />
-            </button>
-          </div>
-        ) : (
-          <div className={styles.collapsedThemeToolbar}>
-            <button
-              className={styles.collapsedThemeBtn}
-              onClick={() => setMode(theme === 'light' ? 'dark' : 'light')}
-              data-tooltip={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-            >
-              {theme === 'light' ? <IconSun size={18} /> : <IconMoon size={18} />}
             </button>
           </div>
         )}

@@ -1,8 +1,5 @@
-/**
- * PlatformSidebar.jsx — Authentic ChatGPT Left Sidebar with Multi-Session Chat History, Triple Dot Menu (Rename/Delete), Profile Modal Trigger & Theme Controls
- * Uses clean SVG iconography (No childish emojis)
- */
 import { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ROLE_CONFIG } from '../../../../constants';
 import { useTheme } from '../../../../context/ThemeContext';
 import {
@@ -26,8 +23,6 @@ export default function PlatformSidebar({
   toggleSidebar,
   mobileOpen,
   setMobileOpen,
-  activeTab,
-  setActiveTab,
   auth,
   logout,
   sessions,
@@ -38,6 +33,8 @@ export default function PlatformSidebar({
   onNewChat,
   onOpenProfile,
 }) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { theme, setMode, colorTheme, setColorTheme, COLOR_THEMES } = useTheme();
   const [showThemePopover, setShowThemePopover] = useState(false);
   const [activeMenuSessionId, setActiveMenuSessionId] = useState(null);
@@ -161,9 +158,9 @@ export default function PlatformSidebar({
         {/* Navigation Tabs */}
         <nav className={styles.navMenu}>
           <button
-            className={`${styles.navItem} ${activeTab === 'chat' ? styles.activeNav : ''}`}
+            className={`${styles.navItem} ${!location.pathname.startsWith('/team') ? styles.activeNav : ''}`}
             onClick={() => {
-              setActiveTab('chat');
+              navigate('/chat');
               setMobileOpen(false);
             }}
             id="nav-chat-tab"
@@ -176,9 +173,9 @@ export default function PlatformSidebar({
           </button>
 
           <button
-            className={`${styles.navItem} ${activeTab === 'team' ? styles.activeNav : ''}`}
+            className={`${styles.navItem} ${location.pathname.startsWith('/team') ? styles.activeNav : ''}`}
             onClick={() => {
-              setActiveTab('team');
+              navigate('/team');
               setMobileOpen(false);
             }}
             id="nav-team-tab"
@@ -192,7 +189,7 @@ export default function PlatformSidebar({
         </nav>
 
         {/* Recent Chat Sessions with Triple Dot Options */}
-        {sidebarOpen && activeTab === 'chat' && sessions && sessions.length > 0 && (
+        {sidebarOpen && !location.pathname.startsWith('/team') && sessions && sessions.length > 0 && (
           <div className={styles.sidebarSection}>
             <div className={styles.sidebarSectionTitle}>Recents</div>
             <div className={styles.suggestionsList}>

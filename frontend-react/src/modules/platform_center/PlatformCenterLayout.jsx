@@ -1,7 +1,8 @@
 /**
- * PlatformCenterLayout.jsx — Master Department Platform Center Layout with Confirmation Modals & Multi-Session Chat
+ * PlatformCenterLayout.jsx — Master Department Platform Center Layout with URL Routing & Multi-Session Chat
  */
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { ROLE_CONFIG } from '../../constants';
@@ -22,7 +23,9 @@ import styles from './styles/platform_center.module.css';
 export default function PlatformCenterLayout() {
   const { auth, logout } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('chat'); // 'chat' | 'team'
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('platformSidebarOpen');
@@ -44,6 +47,8 @@ export default function PlatformCenterLayout() {
   // Session Deletion Confirmation Modal State
   const [sessionToDelete, setSessionToDelete] = useState(null);
   const [isDeletingSession, setIsDeletingSession] = useState(false);
+
+  const isTeam = location.pathname.startsWith('/team');
 
   const roleConf = ROLE_CONFIG[auth.role] || {
     label: auth.role || 'Scoped User',
@@ -82,14 +87,14 @@ export default function PlatformCenterLayout() {
   }
 
   function handleNewChat() {
-    setActiveTab('chat');
+    navigate('/chat');
     setActiveSessionId(null);
     setActiveSession(null);
     setSelectedSuggestion(null);
   }
 
   async function handleSelectSession(sessionId) {
-    setActiveTab('chat');
+    navigate('/chat');
     setActiveSessionId(sessionId);
     setSelectedSuggestion(null);
     try {
@@ -156,7 +161,7 @@ export default function PlatformCenterLayout() {
   }
 
   function handleSelectSuggestion(suggestion) {
-    setActiveTab('chat');
+    navigate('/chat');
     setSelectedSuggestion(suggestion);
   }
 
@@ -199,8 +204,6 @@ export default function PlatformCenterLayout() {
         toggleSidebar={toggleSidebar}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
         auth={auth}
         logout={logout}
         sessions={sessions}
@@ -214,7 +217,13 @@ export default function PlatformCenterLayout() {
 
       {/* Main Board */}
       <main className={styles.main}>
-        {activeTab === 'chat' && (
+        {isTeam ? (
+          <DepartmentUsersPage
+            auth={auth}
+            roleConf={roleConf}
+            setMobileOpen={setMobileOpen}
+          />
+        ) : (
           <PlatformDashboardPage
             auth={auth}
             logout={logout}
@@ -227,14 +236,6 @@ export default function PlatformCenterLayout() {
             onNewChat={handleNewChat}
             sidebarOpen={sidebarOpen}
             toggleSidebar={toggleSidebar}
-            setMobileOpen={setMobileOpen}
-          />
-        )}
-
-        {activeTab === 'team' && (
-          <DepartmentUsersPage
-            auth={auth}
-            roleConf={roleConf}
             setMobileOpen={setMobileOpen}
           />
         )}

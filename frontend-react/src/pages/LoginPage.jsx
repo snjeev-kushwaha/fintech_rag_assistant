@@ -2,12 +2,14 @@
  * LoginPage.jsx — Authentication screen
  */
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { apiLogin } from '../api';
 import { useAuth } from '../context/AuthContext';
 import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,6 +26,7 @@ export default function LoginPage() {
     try {
       const data = await apiLogin(username.trim(), password);
       login(data);
+      navigate(data.role === 'root' ? '/admin/departments' : '/chat', { replace: true });
     } catch (err) {
       setError(err.message || 'Invalid credentials.');
     } finally {
