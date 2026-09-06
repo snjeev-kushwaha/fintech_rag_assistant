@@ -3,52 +3,38 @@ FinSolve Technologies — RAG RBAC Chatbot
 Pydantic Schemas & DTOs
 """
 
-from enum import Enum
 from typing import Optional
 from pydantic import BaseModel
 
 
-# ── Role Definitions ──────────────────────────────────────────────────────────
+# ── Role Administration Models ────────────────────────────────────────────────
 
-class UserRole(str, Enum):
-    FINANCE = "finance"
-    MARKETING = "marketing"
-    HR = "hr"
-    ENGINEERING = "engineering"
-    EXECUTIVE = "executive"
-    EMPLOYEE = "employee"
-    ROOT = "root"
+class RoleCreate(BaseModel):
+    id: Optional[str] = None
+    name: str
+    description: Optional[str] = ""
+    allowed_collections: Optional[list[str]] = None
+    color: Optional[str] = "#3b82f6"
 
 
-ROLE_DISPLAY_NAMES = {
-    UserRole.FINANCE: "Finance Team",
-    UserRole.MARKETING: "Marketing Team",
-    UserRole.HR: "HR Team",
-    UserRole.ENGINEERING: "Engineering Department",
-    UserRole.EXECUTIVE: "C-Level Executive",
-    UserRole.EMPLOYEE: "Employee",
-    UserRole.ROOT: "System Administrator",
-}
+class RoleUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    allowed_collections: Optional[list[str]] = None
+    color: Optional[str] = None
 
-ROLE_COLORS = {
-    UserRole.FINANCE: "#22c55e",       # green
-    UserRole.MARKETING: "#f97316",     # orange
-    UserRole.HR: "#a855f7",            # purple
-    UserRole.ENGINEERING: "#3b82f6",   # blue
-    UserRole.EXECUTIVE: "#eab308",     # gold
-    UserRole.EMPLOYEE: "#94a3b8",      # slate
-    UserRole.ROOT: "#ef4444",          # red
-}
 
-ROLE_EMOJIS = {
-    UserRole.FINANCE: "💰",
-    UserRole.MARKETING: "📈",
-    UserRole.HR: "👥",
-    UserRole.ENGINEERING: "⚙️",
-    UserRole.EXECUTIVE: "👑",
-    UserRole.EMPLOYEE: "🏢",
-    UserRole.ROOT: "🔑",
-}
+class RoleResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    allowed_collections: list[str]
+    color: str
+    is_system: bool = False
+    createdBy: str
+    createdAt: str
+    updatedAt: str
+    user_count: int = 0
 
 
 # ── Department Models ──────────────────────────────────────────────────────────
@@ -56,7 +42,7 @@ ROLE_EMOJIS = {
 class DepartmentCreate(BaseModel):
     name: str
     description: str
-    image: Optional[str] = "🏢"
+    image: Optional[str] = ""
     status: Optional[str] = "Active"
     id: Optional[str] = None
 
@@ -120,7 +106,6 @@ class TokenResponse(BaseModel):
     display_name: str
     username: str
     role_color: str
-    role_emoji: str
 
 
 class UserInfo(BaseModel):
@@ -128,7 +113,6 @@ class UserInfo(BaseModel):
     role: str
     display_name: str
     role_color: str
-    role_emoji: str
 
 
 # ── Chat & RAG Models ─────────────────────────────────────────────────────────
@@ -148,7 +132,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[SourceDocument]
-    role: UserRole
+    role: str
     collections_searched: list[str]
     session_id: Optional[str] = None
 

@@ -2,6 +2,7 @@
  * UserList.jsx — Enterprise User Accounts Section View with Role Filtering, Metrics & Pagination
  */
 import { useState, useMemo, useEffect } from 'react';
+import { List, Search } from 'react-bootstrap-icons';
 import { IconSearch, IconPlus, IconUsers, IconFilter } from '../../../../shared/components/Icons';
 import LoadingSpinner from '../../../../shared/components/LoadingSpinner';
 import UserTable from './UserTable';
@@ -62,7 +63,7 @@ export default function UserList({
             title="Open navigation menu"
             aria-label="Open navigation menu"
           >
-            ☰
+            <List size={20} />
           </button>
           <div>
             <h1 className={styles.title}>User Account Management</h1>
@@ -144,7 +145,7 @@ export default function UserList({
           />
         ) : displayedUsers.length === 0 ? (
           <div className={styles.emptyBox}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
+            <Search size={36} style={{ color: '#94a3b8', marginBottom: '0.75rem' }} />
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'inherit', marginBottom: '0.25rem' }}>
               No user accounts found
             </h3>

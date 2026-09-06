@@ -8,10 +8,9 @@ from backend.app.services.rag_service import (
     get_rag_pipeline,
     resolve_working_gemini_model,
     check_gemini_validity,
-    ROLE_DESCRIPTIONS,
-    ROLE_DISPLAY_NAMES,
 )
-from backend.app.models.schemas import UserRole, SourceDocument
+from backend.app.models.schemas import SourceDocument
+from backend.app.db.roles_store import load_all_roles, get_role_by_id
 from backend.app.core.config import settings
 
 
@@ -81,12 +80,15 @@ class TestRAGContextAndSources:
 
 
 class TestRAGPromptsAndRoles:
-    def test_all_user_roles_configured(self):
-        for role in [UserRole.FINANCE, UserRole.MARKETING, UserRole.HR, UserRole.ENGINEERING, UserRole.EXECUTIVE, UserRole.EMPLOYEE]:
-            assert role in ROLE_DESCRIPTIONS
-            assert role in ROLE_DISPLAY_NAMES
-            assert len(ROLE_DESCRIPTIONS[role]) > 10
-            assert len(ROLE_DISPLAY_NAMES[role]) > 3
+    def test_all_user_roles_configured_in_db(self):
+        roles = load_all_roles()
+        assert len(roles) >= 7
+        for role_id in ["finance", "marketing", "hr", "engineering", "executive", "employee", "root"]:
+            rec = get_role_by_id(role_id)
+            assert rec is not None
+            assert len(rec.name) > 3
+            assert len(rec.description) > 10
+            assert len(rec.allowed_collections) >= 1
 
 
 class TestGeminiModelResolution:

@@ -31,7 +31,7 @@ function DepartmentCard({ dept, count = 0, onViewDetails, onEdit, onDelete }) {
       {/* Card Header */}
       <div className={styles.deptCardHeader}>
         <div
-          className={styles.deptCardEmojiTile}
+          className={styles.deptCardIconTile}
           style={{
             background: `radial-gradient(circle, ${deptColor}25 0%, ${deptColor}0d 100%)`,
             borderColor: `${deptColor}40`,

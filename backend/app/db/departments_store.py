@@ -16,7 +16,7 @@ class DepartmentRecord:
         id: str,
         name: str,
         description: str,
-        image: str = "🏢",
+        image: str = "",
         status: str = "Active",
         createdBy: str = "root",
         createdAt: Optional[str] = None,
@@ -26,7 +26,7 @@ class DepartmentRecord:
         self.id = id
         self.name = name
         self.description = description
-        self.image = image or "🏢"
+        self.image = image or ""
         self.status = status or "Active"
         self.createdBy = createdBy or "root"
         self.createdAt = createdAt or now_iso
@@ -50,7 +50,7 @@ class DepartmentRecord:
             id=data["id"],
             name=data["name"],
             description=data["description"],
-            image=data.get("image", "🏢"),
+            image=data.get("image", ""),
             status=data.get("status", "Active"),
             createdBy=data.get("createdBy", "root"),
             createdAt=data.get("createdAt"),
@@ -70,7 +70,7 @@ def initialize_departments_db():
             "id": "finance",
             "name": "Finance Team",
             "description": "Manages corporate financial planning, budgets, expense limits, and quarterly revenue reporting.",
-            "image": "💰",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -80,7 +80,7 @@ def initialize_departments_db():
             "id": "marketing",
             "name": "Marketing & Sales",
             "description": "Drives brand marketing campaigns, customer NPS feedback analysis, product launches, & lead conversion.",
-            "image": "📈",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -90,7 +90,7 @@ def initialize_departments_db():
             "id": "hr",
             "name": "Human Resources",
             "description": "Handles employee onboarding, headcount tracking, salary brackets, performance reviews, & HR policies.",
-            "image": "👥",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -100,7 +100,7 @@ def initialize_departments_db():
             "id": "engineering",
             "name": "Engineering Department",
             "description": "Builds core microservices, CI/CD deployment pipelines, system architecture, & manages P0 production alerts.",
-            "image": "⚙️",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -110,7 +110,7 @@ def initialize_departments_db():
             "id": "executive",
             "name": "Executive Board",
             "description": "C-Level strategic decision making, corporate governance, enterprise risk oversight, & executive metrics.",
-            "image": "👑",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -120,7 +120,7 @@ def initialize_departments_db():
             "id": "employee",
             "name": "General / Operations",
             "description": "General company policy guidelines, workplace tools, office facilities, & administrative operations.",
-            "image": "🏢",
+            "image": "",
             "status": "Active",
             "createdBy": "root",
             "createdAt": now_iso,
@@ -171,7 +171,7 @@ def get_department_user_count(dept_id: str) -> int:
 def create_department_record(
     name: str,
     description: str,
-    image: Optional[str] = "🏢",
+    image: Optional[str] = "",
     status: str = "Active",
     created_by: str = "root",
     custom_id: Optional[str] = None,
@@ -200,7 +200,7 @@ def create_department_record(
         id=dept_id,
         name=name.strip(),
         description=description.strip(),
-        image=image or "🏢",
+        image=image or "",
         status=status or "Active",
         createdBy=created_by,
         createdAt=now_iso,

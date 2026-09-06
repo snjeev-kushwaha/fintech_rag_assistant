@@ -2,13 +2,16 @@
  * ChatMessageList.jsx — ChatGPT Hero Welcome View & Active Conversation Stream
  */
 import { useRef, useEffect } from 'react';
+import { LightningChargeFill } from 'react-bootstrap-icons';
 import ChatMessageItem from './ChatMessageItem';
 import styles from '../../styles/platform_center.module.css';
 
 function TypingIndicator() {
   return (
     <div className={styles.typingRow}>
-      <div className={styles.msgBotAvatar}>⚡</div>
+      <div className={styles.msgBotAvatar}>
+        <LightningChargeFill size={15} />
+      </div>
       <div className={styles.typingBubble}>
         <span className={styles.dot} />
         <span className={styles.dot} />
@@ -39,7 +42,9 @@ export default function ChatMessageList({ messages, loading, onSelectSuggestion,
     return (
       <div className={styles.messagesList}>
         <div className={styles.emptyHeroContainer}>
-          <div className={styles.emptyHeroIcon}>⚡</div>
+          <div className={styles.emptyHeroIcon}>
+            <LightningChargeFill size={28} />
+          </div>
           <h1 className={styles.emptyHeroTitle}>Where should we begin?</h1>
           <p className={styles.emptyHeroSubtitle}>
             Ask questions scoped to your {roleConf?.label || 'department'} data, financial reports, HR policies, or operational documentation.

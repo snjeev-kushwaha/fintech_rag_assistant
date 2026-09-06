@@ -119,6 +119,44 @@ class TestAdminRBACAPI:
         response = client.get("/admin/users", headers=employee_headers)
         assert response.status_code == 403
 
+    def test_roles_list_authenticated_access(self, client: TestClient, finance_headers: dict):
+        response = client.get("/admin/roles", headers=finance_headers)
+        assert response.status_code == 200
+        roles = response.json()
+        assert isinstance(roles, list)
+        role_ids = [r["id"] for r in roles]
+        assert "finance" in role_ids
+        assert "root" in role_ids
+
+    def test_roles_create_finance_access_denied(self, client: TestClient, finance_headers: dict):
+        response = client.post(
+            "/admin/roles",
+            json={"name": "Auditor", "description": "Audit role"},
+            headers=finance_headers,
+        )
+        assert response.status_code == 403
+
+    def test_roles_create_root_access_granted(self, client: TestClient, root_headers: dict):
+        # Cleanup if exists from previous run
+        client.delete("/admin/roles/test_auditor", headers=root_headers)
+        response = client.post(
+            "/admin/roles",
+            json={"id": "test_auditor", "name": "Test Auditor", "description": "Internal audit"},
+            headers=root_headers,
+        )
+        assert response.status_code in [200, 201]
+        data = response.json()
+        assert data["id"] == "test_auditor"
+        assert data["name"] == "Test Auditor"
+
+        # Cleanup
+        del_res = client.delete("/admin/roles/test_auditor", headers=root_headers)
+        assert del_res.status_code in [200, 204]
+
+    def test_roles_delete_root_role_blocked(self, client: TestClient, root_headers: dict):
+        response = client.delete("/admin/roles/root", headers=root_headers)
+        assert response.status_code == 400
+
 
 # ── Chat & RAG Scoped Endpoints ───────────────────────────────────────────────
 

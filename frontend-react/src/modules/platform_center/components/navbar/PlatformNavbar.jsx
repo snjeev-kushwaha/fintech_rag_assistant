@@ -1,20 +1,22 @@
 /**
  * PlatformNavbar.jsx — Header Navigation Bar for Department Users
  */
+import { LightningChargeFill } from 'react-bootstrap-icons';
 import { ROLE_CONFIG } from '../../../../constants';
 import styles from '../../styles/platform_center.module.css';
 
 export default function PlatformNavbar({ auth, activeTab, setActiveTab, logout }) {
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#3b82f6',
-    emoji: auth.roleEmoji || '🏢',
     label: auth.displayName || auth.role,
   };
 
   return (
     <header className={styles.navbar}>
       <div className={styles.navBrand}>
-        <div className={styles.navLogo}>⚡</div>
+        <div className={styles.navLogo}>
+          <LightningChargeFill size={16} />
+        </div>
         <div className={styles.navTitleWrap}>
           <span className={styles.navTitle}>FinSolve Portal</span>
           <span
@@ -25,7 +27,7 @@ export default function PlatformNavbar({ auth, activeTab, setActiveTab, logout }
               background: `${roleConf.color}15`,
             }}
           >
-            {roleConf.emoji} {roleConf.label}
+            {roleConf.label}
           </span>
         </div>
       </div>
@@ -36,21 +38,21 @@ export default function PlatformNavbar({ auth, activeTab, setActiveTab, logout }
           onClick={() => setActiveTab('chat')}
           id="nav-platform-chat"
         >
-          🤖 RAG AI Assistant
+          AI Assistant
         </button>
         <button
           className={`${styles.navBtn} ${activeTab === 'team' ? styles.activeNavBtn : ''}`}
           onClick={() => setActiveTab('team')}
           id="nav-platform-team"
         >
-          👥 Department Team
+          Department Team
         </button>
         <button
           className={`${styles.navBtn} ${activeTab === 'profile' ? styles.activeNavBtn : ''}`}
           onClick={() => setActiveTab('profile')}
           id="nav-platform-profile"
         >
-          👤 My Profile
+          My Profile
         </button>
       </nav>
 
@@ -60,7 +62,7 @@ export default function PlatformNavbar({ auth, activeTab, setActiveTab, logout }
           <span className={styles.userRole}>@{auth.username}</span>
         </div>
         <button className={styles.logoutBtn} onClick={logout} id="platform-logout-btn">
-          Sign Out 🚪
+          Sign Out
         </button>
       </div>
     </header>

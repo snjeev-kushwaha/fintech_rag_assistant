@@ -215,7 +215,7 @@
   border-color: rgba(99,102,241,0.35);
   transform: translateY(-1px);
 }
-.demoEmoji { font-size: 1rem; }
+.demoIcon { font-size: 1rem; }
 .demoUser {
   font-size: 0.72rem;
   font-weight: 600;

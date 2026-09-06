@@ -11,8 +11,9 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
 from backend.app.core.config import settings
-from backend.app.models.schemas import UserRole, UserInfo, ROLE_DISPLAY_NAMES, ROLE_COLORS, ROLE_EMOJIS
+from backend.app.models.schemas import UserInfo
 from backend.app.db.users_store import get_user_by_username, UserRecord
+from backend.app.db.roles_store import get_role_by_id
 
 # ── OAuth2 Token Extraction ───────────────────────────────────────────────────
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
@@ -86,12 +87,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInfo:
             detail="User not found or inactive",
         )
     role_str = str(user.role.value) if hasattr(user.role, "value") else str(user.role)
+    role_rec = get_role_by_id(role_str)
+    display_name = role_rec.name if role_rec else (user.full_name or role_str.title())
+    role_color = role_rec.color if role_rec else "#3b82f6"
+
     return UserInfo(
         username=user.username,
         role=role_str,
-        display_name=ROLE_DISPLAY_NAMES.get(role_str, user.full_name or role_str),
-        role_color=ROLE_COLORS.get(role_str, "#3b82f6"),
-        role_emoji=ROLE_EMOJIS.get(role_str, "🏢"),
+        display_name=display_name,
+        role_color=role_color,
     )
 
 

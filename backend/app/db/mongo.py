@@ -33,6 +33,7 @@ def ensure_db_indexes():
         db = get_db()
         db["users"].create_index("username", unique=True)
         db["departments"].create_index("id", unique=True)
+        db["roles"].create_index("id", unique=True)
         db["chat_sessions"].create_index([("username", 1), ("updated_at", -1)])
         _indexes_initialized = True
     except Exception as e:
@@ -49,6 +50,12 @@ def get_departments_collection():
     """Get MongoDB departments collection."""
     ensure_db_indexes()
     return get_db()["departments"]
+
+
+def get_roles_collection():
+    """Get MongoDB roles collection."""
+    ensure_db_indexes()
+    return get_db()["roles"]
 
 
 def get_chat_sessions_collection():

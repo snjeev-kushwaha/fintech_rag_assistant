@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.core.config import settings
 from backend.app.core.middleware import SecurityHeadersMiddleware, LoginRateLimitMiddleware
 from backend.app.api.router import api_router
+from backend.app.db.roles_store import initialize_roles_db
 from backend.app.db.departments_store import initialize_departments_db
 from backend.app.db.users_store import initialize_users_db
 from backend.app.db.vector_store import list_collections
@@ -33,6 +34,7 @@ from backend.app.services.rag_service import get_rag_pipeline
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialize database and RAG services cleanly on startup."""
+    initialize_roles_db()
     initialize_departments_db()
     initialize_users_db()
     collections = list_collections()

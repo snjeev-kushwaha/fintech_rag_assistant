@@ -44,7 +44,7 @@ export default function DepartmentUsersPage({ auth, logout }) {
       <header className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>
-            {departmentInfo?.image && !departmentInfo.image.startsWith('http') ? departmentInfo.image + ' ' : '👥 '}
+            {departmentInfo?.image && !departmentInfo.image.startsWith('http') ? departmentInfo.image + ' ' : ''}
             {departmentInfo?.name || 'Department Team'}
           </h1>
           <p className={styles.pageSubtitle}>
@@ -59,7 +59,7 @@ export default function DepartmentUsersPage({ auth, logout }) {
         <div className={styles.teamGrid}>
           {users.map((member) => (
             <div key={member.username} className={styles.teamCard}>
-              <div className={styles.teamAvatar}>👤</div>
+              <div className={styles.teamAvatar}>{(member.full_name || member.username).charAt(0).toUpperCase()}</div>
               <div className={styles.teamInfo}>
                 <h3 className={styles.teamName}>{member.full_name}</h3>
                 <span className={styles.teamUsername}>@{member.username}</span>

@@ -101,7 +101,7 @@ class TestDepartmentKnowledgeLifecycleE2E:
             json={
                 "name": "E2E Compliance",
                 "description": "Enterprise Regulatory Compliance & Risk Management",
-                "image": "⚖️",
+                "image": "",
                 "id": test_dept_id,
             },
             headers=root_headers,

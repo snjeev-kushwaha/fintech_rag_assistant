@@ -53,7 +53,6 @@ export default function PlatformCenterLayout() {
   const roleConf = ROLE_CONFIG[auth.role] || {
     label: auth.role || 'Scoped User',
     color: '#10a37f',
-    emoji: auth.roleEmoji || '🏢',
   };
 
   // Load chat session list from MongoDB on mount or user change

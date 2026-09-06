@@ -23,7 +23,7 @@ from backend.app.core.rbac import (
     check_collection_access,
     require_role,
 )
-from backend.app.models.schemas import UserRole, UserInfo
+from backend.app.models.schemas import UserInfo
 
 
 # ── Password Hashing & Verification ──────────────────────────────────────────
@@ -131,67 +131,65 @@ class TestSecurityUtils:
 
 class TestRBAC:
     def test_finance_allowed_collections(self):
-        cols = get_allowed_collections(UserRole.FINANCE)
+        cols = get_allowed_collections("finance")
         assert "finance" in cols
         assert "general" in cols
         assert "hr_data" not in cols
         assert "engineering" not in cols
 
     def test_hr_allowed_collections(self):
-        cols = get_allowed_collections(UserRole.HR)
+        cols = get_allowed_collections("hr")
         assert "hr_data" in cols
         assert "general" in cols
         assert "finance" not in cols
 
     def test_engineering_allowed_collections(self):
-        cols = get_allowed_collections(UserRole.ENGINEERING)
+        cols = get_allowed_collections("engineering")
         assert "engineering" in cols
         assert "general" in cols
         assert "finance" not in cols
 
     def test_marketing_allowed_collections(self):
-        cols = get_allowed_collections(UserRole.MARKETING)
+        cols = get_allowed_collections("marketing")
         assert "marketing" in cols
         assert "general" in cols
         assert "engineering" not in cols
 
     def test_executive_and_root_full_access(self):
-        for role in [UserRole.EXECUTIVE, UserRole.ROOT]:
+        for role in ["executive", "root"]:
             cols = get_allowed_collections(role)
             for expected in ["finance", "marketing", "hr_data", "engineering", "general"]:
                 assert expected in cols
 
     def test_employee_general_only(self):
-        cols = get_allowed_collections(UserRole.EMPLOYEE)
+        cols = get_allowed_collections("employee")
         assert cols == ["general"]
 
     def test_check_collection_access(self):
-        assert check_collection_access(UserRole.FINANCE, "finance") is True
-        assert check_collection_access(UserRole.FINANCE, "hr_data") is False
-        assert check_collection_access(UserRole.EMPLOYEE, "general") is True
-        assert check_collection_access(UserRole.EMPLOYEE, "finance") is False
-        assert check_collection_access(UserRole.EXECUTIVE, "hr_data") is True
+        assert check_collection_access("finance", "finance") is True
+        assert check_collection_access("finance", "hr_data") is False
+        assert check_collection_access("employee", "general") is True
+        assert check_collection_access("employee", "finance") is False
+        assert check_collection_access("executive", "hr_data") is True
 
     def test_require_role_authorized(self):
-        guard = require_role(UserRole.ROOT, UserRole.EXECUTIVE)
+        guard = require_role("root", "executive")
         user = UserInfo(
             username="root",
-            role=UserRole.ROOT.value,
+            role="root",
             display_name="System Administrator",
             role_color="#ef4444",
-            role_emoji="🔑",
         )
         res = guard(current_user=user)
         assert res.username == "root"
 
     def test_require_role_unauthorized(self):
-        guard = require_role(UserRole.ROOT)
+        guard = require_role("root")
         user = UserInfo(
             username="alice",
-            role=UserRole.FINANCE.value,
+            role="finance",
             display_name="Finance Team Member",
             role_color="#22c55e",
-            role_emoji="💰",
         )
         with pytest.raises(HTTPException) as exc:
             guard(current_user=user)

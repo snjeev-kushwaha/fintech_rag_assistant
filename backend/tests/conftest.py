@@ -16,9 +16,6 @@ for p in [str(PROJECT_ROOT), str(BACKEND_DIR)]:
 
 from backend.app.main import app
 from backend.app.core.security import create_access_token
-from backend.app.models.schemas import UserRole
-
-
 @pytest.fixture(scope="session")
 def client():
     """Reusable FastAPI TestClient instance."""
@@ -39,29 +36,29 @@ def _make_auth_header(username: str, role: str, department_id: str | None = None
 
 @pytest.fixture
 def root_headers():
-    return _make_auth_header("root", UserRole.ROOT.value, "root")
+    return _make_auth_header("root", "root", "root")
 
 
 @pytest.fixture
 def finance_headers():
-    return _make_auth_header("alice_finance", UserRole.FINANCE.value, "finance")
+    return _make_auth_header("alice_finance", "finance", "finance")
 
 
 @pytest.fixture
 def hr_headers():
-    return _make_auth_header("carol_hr", UserRole.HR.value, "hr")
+    return _make_auth_header("carol_hr", "hr", "hr")
 
 
 @pytest.fixture
 def marketing_headers():
-    return _make_auth_header("bob_marketing", UserRole.MARKETING.value, "marketing")
+    return _make_auth_header("bob_marketing", "marketing", "marketing")
 
 
 @pytest.fixture
 def eng_headers():
-    return _make_auth_header("dave_eng", UserRole.ENGINEERING.value, "engineering")
+    return _make_auth_header("dave_eng", "engineering", "engineering")
 
 
 @pytest.fixture
 def employee_headers():
-    return _make_auth_header("employee1", UserRole.EMPLOYEE.value, "employee")
+    return _make_auth_header("employee1", "employee", "employee")

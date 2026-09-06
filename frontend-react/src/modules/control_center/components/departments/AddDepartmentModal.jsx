@@ -12,8 +12,8 @@ export default function AddDepartmentModal({
   onSubmit,
   deptNameInput,
   setDeptNameInput,
-  deptEmojiInput,
-  setDeptEmojiInput,
+  deptIconInput,
+  setDeptIconInput,
   deptStatusInput,
   setDeptStatusInput,
   deptKeyInput,
@@ -96,13 +96,13 @@ export default function AddDepartmentModal({
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="create-dept-emoji">Category / Icon Tag (Optional)</label>
+                <label htmlFor="create-dept-icon">Category / Icon Tag (Optional)</label>
                 <input
-                  id="create-dept-emoji"
+                  id="create-dept-icon"
                   type="text"
                   placeholder="e.g. legal, finance, or image URL"
-                  value={deptEmojiInput}
-                  onChange={(e) => setDeptEmojiInput(e.target.value)}
+                  value={deptIconInput}
+                  onChange={(e) => setDeptIconInput(e.target.value)}
                   autoComplete="off"
                 />
               </div>

@@ -6,8 +6,8 @@ from typing import Optional
 from pymongo import ReturnDocument
 
 from backend.app.core.config import settings
-from backend.app.models.schemas import UserRole
 from backend.app.db.mongo import get_users_collection, get_mongo_client
+from backend.app.db.roles_store import initialize_roles_db
 
 
 class UserRecord:
@@ -57,12 +57,13 @@ def _hash_raw_password(password: str) -> str:
 
 def initialize_users_db():
     """Seed the local MongoDB database with default users if empty."""
+    initialize_roles_db()
     root_pwd = getattr(settings, "root_password", "root123")
     initial_users = [
         {
             "username": "root",
             "hashed_password": _hash_raw_password(root_pwd),
-            "role": UserRole.ROOT.value,
+            "role": "root",
             "full_name": "System Administrator",
             "is_active": True,
             "departmentId": "root",
@@ -70,7 +71,7 @@ def initialize_users_db():
         {
             "username": "alice_finance",
             "hashed_password": _hash_raw_password("finance123"),
-            "role": UserRole.FINANCE.value,
+            "role": "finance",
             "full_name": "Alice Fernandez",
             "is_active": True,
             "departmentId": "finance",
@@ -78,7 +79,7 @@ def initialize_users_db():
         {
             "username": "bob_marketing",
             "hashed_password": _hash_raw_password("marketing123"),
-            "role": UserRole.MARKETING.value,
+            "role": "marketing",
             "full_name": "Bob Chatterjee",
             "is_active": True,
             "departmentId": "marketing",
@@ -86,7 +87,7 @@ def initialize_users_db():
         {
             "username": "carol_hr",
             "hashed_password": _hash_raw_password("hr123"),
-            "role": UserRole.HR.value,
+            "role": "hr",
             "full_name": "Carol Raj",
             "is_active": True,
             "departmentId": "hr",
@@ -94,7 +95,7 @@ def initialize_users_db():
         {
             "username": "dave_eng",
             "hashed_password": _hash_raw_password("eng123"),
-            "role": UserRole.ENGINEERING.value,
+            "role": "engineering",
             "full_name": "Dave Pillai",
             "is_active": True,
             "departmentId": "engineering",
@@ -102,7 +103,7 @@ def initialize_users_db():
         {
             "username": "tony_cto",
             "hashed_password": _hash_raw_password("executive123"),
-            "role": UserRole.EXECUTIVE.value,
+            "role": "executive",
             "full_name": "Tony Sharma",
             "is_active": True,
             "departmentId": "executive",
@@ -110,7 +111,7 @@ def initialize_users_db():
         {
             "username": "employee1",
             "hashed_password": _hash_raw_password("employee123"),
-            "role": UserRole.EMPLOYEE.value,
+            "role": "employee",
             "full_name": "Rohan Kumar",
             "is_active": True,
             "departmentId": "employee",

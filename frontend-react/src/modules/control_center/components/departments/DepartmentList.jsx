@@ -3,6 +3,7 @@
  * Optimized for butter-smooth 60fps scrolling & instant O(1) headcount lookups
  */
 import { useState, useMemo, useEffect } from 'react';
+import { List, Search } from 'react-bootstrap-icons';
 import DepartmentCard from './DepartmentCard';
 import { IconSearch, IconPlus, IconBuilding, IconUsers } from '../../../../shared/components/Icons';
 import styles from '../../styles/control_center.module.css';
@@ -73,7 +74,7 @@ export default function DepartmentList({
             title="Open navigation menu"
             aria-label="Open navigation menu"
           >
-            ☰
+            <List size={20} />
           </button>
           <div>
             <h1 className={styles.title}>Corporate Department Directory</h1>
@@ -223,7 +224,7 @@ export default function DepartmentList({
         </>
       ) : (
         <div className={styles.emptyBox}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔍</div>
+          <Search size={36} style={{ color: '#94a3b8', marginBottom: '0.75rem' }} />
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'inherit', marginBottom: '0.25rem' }}>
             No departments match your search
           </h3>

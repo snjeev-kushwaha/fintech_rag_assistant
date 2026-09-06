@@ -6,7 +6,6 @@
 export const ROLE_CONFIG = {
   finance: {
     color: '#22c55e',
-    emoji: '💰',
     label: 'Finance Team',
     collections: ['Finance Data', 'General Info'],
     suggestions: [
@@ -19,7 +18,6 @@ export const ROLE_CONFIG = {
   },
   marketing: {
     color: '#f97316',
-    emoji: '📈',
     label: 'Marketing Team',
     collections: ['Marketing Data', 'General Info'],
     suggestions: [
@@ -32,7 +30,6 @@ export const ROLE_CONFIG = {
   },
   hr: {
     color: '#a855f7',
-    emoji: '👥',
     label: 'HR Team',
     collections: ['HR Data', 'General Info'],
     suggestions: [
@@ -45,7 +42,6 @@ export const ROLE_CONFIG = {
   },
   engineering: {
     color: '#3b82f6',
-    emoji: '⚙️',
     label: 'Engineering Dept',
     collections: ['Engineering Data', 'General Info'],
     suggestions: [
@@ -58,7 +54,6 @@ export const ROLE_CONFIG = {
   },
   executive: {
     color: '#eab308',
-    emoji: '👑',
     label: 'C-Level Executive',
     collections: ['All Departments'],
     suggestions: [
@@ -71,7 +66,6 @@ export const ROLE_CONFIG = {
   },
   employee: {
     color: '#94a3b8',
-    emoji: '🏢',
     label: 'Employee',
     collections: ['General Info Only'],
     suggestions: [
@@ -84,7 +78,6 @@ export const ROLE_CONFIG = {
   },
   root: {
     color: '#ef4444',
-    emoji: '🔑',
     label: 'System Administrator',
     collections: ['System-wide Management'],
     suggestions: [],

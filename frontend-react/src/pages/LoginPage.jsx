@@ -3,6 +3,7 @@
  */
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ShieldLockFill } from 'react-bootstrap-icons';
 import { apiLogin } from '../api';
 import { useAuth } from '../context/AuthContext';
 import styles from './LoginPage.module.css';
@@ -46,7 +47,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.logoWrap}>
-            <span className={styles.logoIcon} role="img" aria-label="bank">🏦</span>
+            <ShieldLockFill size={24} />
             <span className={styles.logoPulse} aria-hidden="true" />
           </div>
           <h1 className={styles.title}>FinSolve AI</h1>
@@ -86,7 +87,7 @@ export default function LoginPage() {
 
             {error && (
               <div className={styles.errorBox} role="alert">
-                <span>⚠️</span> {error}
+                {error}
               </div>
             )}
 

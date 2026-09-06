@@ -7,9 +7,10 @@ import requests
 import google.generativeai as genai
 
 from backend.app.core.config import settings
-from backend.app.models.schemas import UserRole, SourceDocument
+from backend.app.models.schemas import SourceDocument
 from backend.app.core.rbac import get_allowed_collections, COLLECTION_LABELS
 from backend.app.db.vector_store import query_collections
+from backend.app.db.roles_store import get_role_by_id
 
 
 # ── Gemini Validation Helper ──────────────────────────────────────────────────
@@ -121,24 +122,6 @@ CONTEXT DOCUMENTS:
 {context}"""
 
 
-ROLE_DESCRIPTIONS = {
-    UserRole.FINANCE: "You have access to: Financial reports, marketing expense budgets, equipment procurement costs, and employee reimbursement data. You also have access to general company information.",
-    UserRole.MARKETING: "You have access to: Campaign performance data, customer feedback & NPS, and sales metrics. You also have access to general company information.",
-    UserRole.HR: "You have access to: Employee records & directory, attendance records, payroll data, and performance reviews. You also have access to general company information.",
-    UserRole.ENGINEERING: "You have access to: Technical architecture documentation, software development processes and CI/CD practices, and operational guidelines & runbooks. You also have access to general company information.",
-    UserRole.EXECUTIVE: "You have FULL ACCESS to all company data including: Financial reports, marketing data, HR records, engineering documentation, and general company information.",
-    UserRole.EMPLOYEE: "You have access to: General company information only — company policies, events, and FAQs. Sensitive departmental data requires specific role permissions.",
-}
-
-ROLE_DISPLAY_NAMES = {
-    UserRole.FINANCE: "Finance Team Member",
-    UserRole.MARKETING: "Marketing Team Member",
-    UserRole.HR: "HR Team Member",
-    UserRole.ENGINEERING: "Engineering Team Member",
-    UserRole.EXECUTIVE: "C-Level Executive",
-    UserRole.EMPLOYEE: "Employee",
-}
-
 
 # ── RAG Pipeline Class ────────────────────────────────────────────────────────
 
@@ -183,7 +166,7 @@ class RAGPipeline:
     def retrieve(
         self,
         query: str,
-        role: UserRole,
+        role: str,
         top_k: int = None,
     ) -> tuple[list[dict], list[str]]:
         """
@@ -256,24 +239,20 @@ class RAGPipeline:
         self,
         query: str,
         chunks: list[dict],
-        role: UserRole,
+        role: str,
         allowed_collections: list[str],
     ) -> str:
         """
         Generate answer using local LLaMA or Gemini based on retrieved chunks or conversational input.
         """
-        role_str = role.value if hasattr(role, "value") else str(role)
-        enum_role = None
-        try:
-            enum_role = UserRole(role_str)
-        except ValueError:
-            pass
-
-        role_display = (
-            ROLE_DISPLAY_NAMES.get(enum_role)
-            if enum_role
-            else ROLE_DISPLAY_NAMES.get(role_str, f"{role_str.title()} Team Member")
-        )
+        role_str = role.value if hasattr(role, "value") else str(role).strip().lower()
+        role_rec = get_role_by_id(role_str)
+        if role_rec:
+            role_display = role_rec.name
+            role_desc = role_rec.description or f"You have access to: {', '.join(allowed_collections)}."
+        else:
+            role_display = f"{role_str.title()} Team Member"
+            role_desc = f"You have access to: {', '.join(allowed_collections)}. Sensitive departmental data requires specific role permissions."
 
         cleaned_q = query.strip().lower().rstrip("?!.")
         greetings = {"hello", "hi", "hey", "good morning", "good afternoon", "good evening", "howdy", "greetings", "hi there", "hello there", "how are you", "who are you", "what can you do", "help"}
@@ -296,11 +275,6 @@ class RAGPipeline:
                 )
         else:
             context = self.build_context(chunks)
-            role_desc = (
-                ROLE_DESCRIPTIONS.get(enum_role)
-                if enum_role
-                else ROLE_DESCRIPTIONS.get(role_str, f"Access to {role_str} department documents.")
-            )
             prompt = SYSTEM_PROMPT_TEMPLATE.format(
                 role_display=role_display,
                 role_description=role_desc,
@@ -350,7 +324,7 @@ class RAGPipeline:
     def query(
         self,
         user_query: str,
-        role: UserRole,
+        role: str,
     ) -> dict:
         """
         Full RAG pipeline: filter & retrieve relevant subset -> generate answer -> return relevant sources.

@@ -3,10 +3,9 @@ Models package: schemas and enums.
 """
 
 from backend.app.models.schemas import (
-    UserRole,
-    ROLE_DISPLAY_NAMES,
-    ROLE_COLORS,
-    ROLE_EMOJIS,
+    RoleCreate,
+    RoleUpdate,
+    RoleResponse,
     DepartmentCreate,
     DepartmentUpdate,
     DepartmentResponse,

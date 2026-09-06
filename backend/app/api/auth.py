@@ -11,10 +11,8 @@ from backend.app.core.security import authenticate_user, create_access_token, ge
 from backend.app.models.schemas import (
     TokenResponse,
     UserInfo,
-    ROLE_DISPLAY_NAMES,
-    ROLE_COLORS,
-    ROLE_EMOJIS,
 )
+from backend.app.db.roles_store import get_role_by_id
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -38,14 +36,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         expires_delta=timedelta(minutes=settings.access_token_expire_minutes),
     )
 
+    role_str = user.role.value if hasattr(user.role, "value") else str(user.role)
+    role_rec = get_role_by_id(role_str)
+    display_name = role_rec.name if role_rec else (user.full_name or role_str.title())
+    role_color = role_rec.color if role_rec else "#3b82f6"
+
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
-        role=user.role,
-        display_name=ROLE_DISPLAY_NAMES.get(user.role, user.role),
+        role=role_str,
+        display_name=display_name,
         username=user.username,
-        role_color=ROLE_COLORS.get(user.role, "#94a3b8"),
-        role_emoji=ROLE_EMOJIS.get(user.role, "👤"),
+        role_color=role_color,
     )
 
 

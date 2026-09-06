@@ -31,7 +31,6 @@ export default function PlatformDashboardPage({
   const { toast } = useToast();
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#10a37f',
-    emoji: auth.roleEmoji || '🏢',
     label: auth.displayName || auth.role,
   };
 
@@ -112,7 +111,7 @@ export default function PlatformDashboardPage({
       const result = await apiUploadAttachment(file, auth.token);
       const botMsg = {
         role: 'bot',
-        content: `📁 **Attachment Uploaded & Indexed**\n\nDocument **${result.filename}** has been saved to the **${result.department.toUpperCase()}** department data folder (\`backend/data/${result.department}\`) and indexed into the vector store (${result.chunks_ingested} text chunks).\n\nYou can now ask questions about this newly uploaded document!`,
+        content: `**Attachment Uploaded & Indexed**\n\nDocument **${result.filename}** has been saved to the **${result.department.toUpperCase()}** department data folder (\`backend/data/${result.department}\`) and indexed into the vector store (${result.chunks_ingested} text chunks).\n\nYou can now ask questions about this newly uploaded document!`,
         sources: [],
         timestamp: timestamp(),
       };

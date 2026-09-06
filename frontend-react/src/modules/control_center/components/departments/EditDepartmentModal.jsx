@@ -12,8 +12,8 @@ export default function EditDepartmentModal({
   onSubmit,
   deptNameInput,
   setDeptNameInput,
-  deptEmojiInput,
-  setDeptEmojiInput,
+  deptIconInput,
+  setDeptIconInput,
   deptStatusInput,
   setDeptStatusInput,
   deptDescInput,
@@ -84,13 +84,13 @@ export default function EditDepartmentModal({
               </div>
 
               <div className={styles.field}>
-                <label htmlFor="edit-dept-emoji">Category / Icon Tag (Optional)</label>
+                <label htmlFor="edit-dept-icon">Category / Icon Tag (Optional)</label>
                 <input
-                  id="edit-dept-emoji"
+                  id="edit-dept-icon"
                   type="text"
                   placeholder="e.g. legal, finance, or image URL"
-                  value={deptEmojiInput}
-                  onChange={(e) => setDeptEmojiInput(e.target.value)}
+                  value={deptIconInput}
+                  onChange={(e) => setDeptIconInput(e.target.value)}
                 />
               </div>
             </div>

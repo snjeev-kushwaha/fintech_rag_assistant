@@ -846,7 +846,7 @@
   margin-bottom: 0.85rem;
 }
 
-.deptCardEmojiTile {
+.deptCardIconTile {
   width: 46px;
   height: 46px;
   border-radius: 12px;
@@ -858,7 +858,7 @@
   transition: transform 0.2s ease;
 }
 
-.deptCard:hover .deptCardEmojiTile {
+.deptCard:hover .deptCardIconTile {
   transform: scale(1.06);
 }
 

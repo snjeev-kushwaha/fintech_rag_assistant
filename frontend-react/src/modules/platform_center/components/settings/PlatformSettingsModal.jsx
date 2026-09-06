@@ -1,6 +1,7 @@
 /**
  * PlatformSettingsModal.jsx — Platform Center Settings Popup with Theme Selection
  */
+import { GearFill, SunFill, MoonFill } from 'react-bootstrap-icons';
 import { useTheme } from '../../../../context/ThemeContext';
 import styles from '../../styles/platform_center.module.css';
 
@@ -18,7 +19,7 @@ export default function PlatformSettingsModal({ isOpen, onClose, roleConf }) {
       >
         <div className={styles.modalHeader}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <span style={{ fontSize: '1.25rem' }}>⚙️</span>
+            <GearFill size={18} />
             <h2>Platform Settings</h2>
           </div>
           <button className={styles.modalClose} onClick={onClose} title="Close Settings">
@@ -49,7 +50,7 @@ export default function PlatformSettingsModal({ isOpen, onClose, roleConf }) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '1.35rem' }}>☀️</span>
+                  <SunFill size={20} />
                   {theme === 'light' && (
                     <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10a37f', textTransform: 'uppercase' }}>
                       Active
@@ -78,7 +79,7 @@ export default function PlatformSettingsModal({ isOpen, onClose, roleConf }) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '1.35rem' }}>🌙</span>
+                  <MoonFill size={20} />
                   {theme === 'dark' && (
                     <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#10a37f', textTransform: 'uppercase' }}>
                       Active

@@ -100,7 +100,7 @@ export default function ControlCenterLayout() {
 
   // Form Inputs — Department
   const [deptNameInput, setDeptNameInput] = useState('');
-  const [deptEmojiInput, setDeptEmojiInput] = useState('');
+  const [deptIconInput, setDeptIconInput] = useState('');
   const [deptKeyInput, setDeptKeyInput] = useState('');
   const [deptDescInput, setDeptDescInput] = useState('');
   const [deptStatusInput, setDeptStatusInput] = useState('Active');
@@ -170,7 +170,7 @@ export default function ControlCenterLayout() {
     setError('');
     setDeptNameInput('');
     setDeptKeyInput('');
-    setDeptEmojiInput('');
+    setDeptIconInput('');
     setDeptDescInput('');
     setDeptFilesInput([]);
     setDeptStatusInput('Active');
@@ -199,7 +199,7 @@ export default function ControlCenterLayout() {
       const payload = {
         name: deptNameInput.trim(),
         description: deptDescInput.trim(),
-        image: deptEmojiInput.trim() || undefined,
+        image: deptIconInput.trim() || undefined,
         status: deptStatusInput,
         id: deptKeyInput.trim() || undefined,
       };
@@ -219,7 +219,7 @@ export default function ControlCenterLayout() {
       setDeptNameInput('');
       setDeptKeyInput('');
       setDeptDescInput('');
-      setDeptEmojiInput('');
+      setDeptIconInput('');
       setDeptFilesInput([]);
       setDeptStatusInput('Active');
       setShowCreateDeptModal(false);
@@ -238,7 +238,7 @@ export default function ControlCenterLayout() {
   function openEditDeptModal(dept) {
     setEditingDept(dept);
     setDeptNameInput(dept.name || '');
-    setDeptEmojiInput(dept.image || '');
+    setDeptIconInput(dept.image || '');
     setDeptDescInput(dept.description || '');
     setDeptStatusInput(dept.status || 'Active');
     setShowEditDeptModal(true);
@@ -256,7 +256,7 @@ export default function ControlCenterLayout() {
       const payload = {
         name: deptNameInput.trim(),
         description: deptDescInput.trim(),
-        image: deptEmojiInput.trim() || undefined,
+        image: deptIconInput.trim() || undefined,
         status: deptStatusInput,
       };
       await apiUpdateDepartment(editingDept.id, payload, auth.token);
@@ -567,8 +567,8 @@ export default function ControlCenterLayout() {
         onSubmit={handleCreateDepartment}
         deptNameInput={deptNameInput}
         setDeptNameInput={setDeptNameInput}
-        deptEmojiInput={deptEmojiInput}
-        setDeptEmojiInput={setDeptEmojiInput}
+        deptIconInput={deptIconInput}
+        setDeptIconInput={setDeptIconInput}
         deptStatusInput={deptStatusInput}
         setDeptStatusInput={setDeptStatusInput}
         deptKeyInput={deptKeyInput}
@@ -586,8 +586,8 @@ export default function ControlCenterLayout() {
         onSubmit={handleUpdateDepartment}
         deptNameInput={deptNameInput}
         setDeptNameInput={setDeptNameInput}
-        deptEmojiInput={deptEmojiInput}
-        setDeptEmojiInput={setDeptEmojiInput}
+        deptIconInput={deptIconInput}
+        setDeptIconInput={setDeptIconInput}
         deptStatusInput={deptStatusInput}
         setDeptStatusInput={setDeptStatusInput}
         deptDescInput={deptDescInput}

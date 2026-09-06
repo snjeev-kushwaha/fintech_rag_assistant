@@ -7,7 +7,6 @@ import styles from '../styles/platform_center.module.css';
 export default function UserProfilePage({ auth }) {
   const roleConf = ROLE_CONFIG[auth.role] || {
     color: '#3b82f6',
-    emoji: auth.roleEmoji || '🏢',
     label: auth.displayName || auth.role,
   };
   
@@ -34,7 +33,7 @@ export default function UserProfilePage({ auth }) {
       <div className={styles.profileCard}>
         <div className={styles.profileHeader}>
           <div className={styles.profileAvatar} style={{ borderColor: roleConf.color }}>
-            {roleConf.emoji}
+            {(auth.displayName || auth.username).charAt(0).toUpperCase()}
           </div>
           <div>
             <h2 className={styles.profileName}>{auth.displayName || auth.username}</h2>
@@ -53,7 +52,7 @@ export default function UserProfilePage({ auth }) {
                 background: `${roleConf.color}15`,
               }}
             >
-              {roleConf.emoji} {roleConf.label}
+              {roleConf.label}
             </div>
           </div>
 
@@ -67,7 +66,7 @@ export default function UserProfilePage({ auth }) {
             <div className={styles.scopeTags}>
               {accessScope.map((scope, idx) => (
                 <span key={idx} className={styles.scopeTag}>
-                  🔒 {scope}
+                  {scope}
                 </span>
               ))}
             </div>

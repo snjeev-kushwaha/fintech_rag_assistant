@@ -15,7 +15,6 @@ const defaultLoggedOutState = {
   username: null,
   displayName: null,
   roleColor: null,
-  roleEmoji: null,
 };
 
 export function AuthProvider({ children }) {
@@ -46,7 +45,6 @@ export function AuthProvider({ children }) {
       username: data.username,
       displayName: data.display_name,
       roleColor: data.role_color,
-      roleEmoji: data.role_emoji,
     });
   }, []);
 
@@ -68,7 +66,6 @@ export function AuthProvider({ children }) {
           username: userInfo.username,
           displayName: userInfo.display_name,
           roleColor: userInfo.role_color,
-          roleEmoji: userInfo.role_emoji,
         });
       } catch (err) {
         console.warn('Saved auth token is invalid or expired. Logging out.');
