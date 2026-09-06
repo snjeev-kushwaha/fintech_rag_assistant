@@ -9,15 +9,64 @@ from fastapi import HTTPException, status
 from backend.app.db.roles_store import get_role_by_id
 
 
-# ── RBAC Dynamic Collection Mapping ───────────────────────────────────────────
-# Human-readable labels for standard department collections
-COLLECTION_LABELS: dict[str, str] = {
-    "finance": "Finance Department",
-    "marketing": "Marketing Department",
-    "hr_data": "Human Resources",
-    "engineering": "Engineering Department",
-    "general": "General Company Information",
-}
+def get_collection_label(collection_name: str) -> str:
+    """
+    Dynamically retrieve human-readable display label for a collection/department from MongoDB.
+    Queries the database collections and roles dynamically without any hardcoded dictionary.
+    """
+    if not collection_name:
+        return ""
+
+    clean = str(collection_name).strip().lower()
+
+    # 1. Query MongoDB departments repository
+    try:
+        from backend.app.db.departments_store import get_department_by_id
+        dept_key = clean.replace("_data", "")
+        dept = get_department_by_id(clean) or get_department_by_id(dept_key)
+        if dept and dept.name:
+            return dept.name
+    except Exception:
+        pass
+
+    # 2. Query MongoDB roles repository
+    try:
+        role_key = clean.replace("_data", "")
+        role_rec = get_role_by_id(clean) or get_role_by_id(role_key)
+        if role_rec and role_rec.name:
+            return role_rec.name
+    except Exception:
+        pass
+
+    # 3. Dynamic formatting fallback
+    return clean.replace("_", " ").title()
+
+
+class DynamicCollectionLabels(dict):
+    """
+    Dynamic dictionary proxy that retrieves collection display labels directly
+    from MongoDB on demand, replacing static hardcoded role dictionaries.
+    """
+    def get(self, key, default=None):
+        if not key:
+            return default if default is not None else ""
+        label = get_collection_label(str(key))
+        if label:
+            return label
+        return default if default is not None else str(key)
+
+    def __getitem__(self, key):
+        label = get_collection_label(str(key))
+        if label:
+            return label
+        raise KeyError(key)
+
+    def __contains__(self, key):
+        return True
+
+
+# Dynamic database-backed collection label resolver
+COLLECTION_LABELS = DynamicCollectionLabels()
 
 
 def get_allowed_collections(role: str) -> list[str]:

@@ -94,6 +94,7 @@ fin-tech/
 │   ├── chroma_db/                   # ChromaDB persistent vector collection storage
 │   ├── data/                        # Physical department documents (backend/data/<dept>/)
 │   ├── scripts/
+│   │   ├── init_db.py               # Initialize MongoDB with root user & root role
 │   │   └── ingest_data.py           # Initial data ingestion script
 │   ├── Dockerfile                   # Backend Dockerfile
 │   ├── docker-compose.yml           # Backend Docker Compose (App + Mongo + Ollama)
@@ -169,17 +170,28 @@ python -m venv .venv
 # 3. Install Python dependencies
 pip install -r requirements.txt
 
-# 4. Ingest starter department knowledge files
+# 4. Initialize Database (Provisions root user & root role)
+python scripts/init_db.py
+
+# 5. Ingest starter department knowledge files
 python scripts/ingest_data.py
 
-# 5. Run automated test suite (51 tests)
+# 6. Run automated test suite (60 tests)
 pytest -v
 
-# 6. Start the FastAPI backend server
+# 7. Start the FastAPI backend server
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 * Backend API: **`http://127.0.0.1:8000`**
 * Interactive Swagger Docs: **`http://127.0.0.1:8000/docs`**
+
+#### Initial Administrator Access
+Running `python scripts/init_db.py` sets up the initial system administrator credentials using values secured in `.env`:
+* **Username**: configured via `ROOT_USERNAME` in `.env` (default: `root`)
+* **Password**: configured via `ROOT_PASSWORD` in `.env` (default: `root123`)
+* **Control Center**: `http://localhost:5173/admin/roles`
+
+From the Control Center UI, administrators can dynamically create and manage all departmental roles, departments, and user accounts.
 
 #### 3. Frontend Setup
 Open a new terminal window:

@@ -56,65 +56,18 @@ def _hash_raw_password(password: str) -> str:
 
 
 def initialize_users_db():
-    """Seed the local MongoDB database with default users if empty."""
+    """Seed the local MongoDB database with default root user if empty."""
     initialize_roles_db()
-    root_pwd = getattr(settings, "root_password", "root123")
+    root_user = settings.root_username
+    root_pwd = settings.root_password
     initial_users = [
         {
-            "username": "root",
+            "username": root_user,
             "hashed_password": _hash_raw_password(root_pwd),
             "role": "root",
             "full_name": "System Administrator",
             "is_active": True,
             "departmentId": "root",
-        },
-        {
-            "username": "alice_finance",
-            "hashed_password": _hash_raw_password("finance123"),
-            "role": "finance",
-            "full_name": "Alice Fernandez",
-            "is_active": True,
-            "departmentId": "finance",
-        },
-        {
-            "username": "bob_marketing",
-            "hashed_password": _hash_raw_password("marketing123"),
-            "role": "marketing",
-            "full_name": "Bob Chatterjee",
-            "is_active": True,
-            "departmentId": "marketing",
-        },
-        {
-            "username": "carol_hr",
-            "hashed_password": _hash_raw_password("hr123"),
-            "role": "hr",
-            "full_name": "Carol Raj",
-            "is_active": True,
-            "departmentId": "hr",
-        },
-        {
-            "username": "dave_eng",
-            "hashed_password": _hash_raw_password("eng123"),
-            "role": "engineering",
-            "full_name": "Dave Pillai",
-            "is_active": True,
-            "departmentId": "engineering",
-        },
-        {
-            "username": "tony_cto",
-            "hashed_password": _hash_raw_password("executive123"),
-            "role": "executive",
-            "full_name": "Tony Sharma",
-            "is_active": True,
-            "departmentId": "executive",
-        },
-        {
-            "username": "employee1",
-            "hashed_password": _hash_raw_password("employee123"),
-            "role": "employee",
-            "full_name": "Rohan Kumar",
-            "is_active": True,
-            "departmentId": "employee",
         },
     ]
 
@@ -217,7 +170,8 @@ def update_user_record(
 
 def delete_user_record(username: str):
     """Delete a user from the MongoDB database."""
-    if username == "root":
+    root_user = getattr(settings, "root_username", "root")
+    if username in ("root", root_user):
         raise ValueError("Cannot delete system administrator account.")
     col = get_users_collection()
     res = col.delete_one({"username": username})

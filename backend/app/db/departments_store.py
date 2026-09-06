@@ -68,7 +68,7 @@ def initialize_departments_db():
     default_departments = [
         {
             "id": "finance",
-            "name": "Finance Team",
+            "name": "Finance Department",
             "description": "Manages corporate financial planning, budgets, expense limits, and quarterly revenue reporting.",
             "image": "",
             "status": "Active",
@@ -78,7 +78,7 @@ def initialize_departments_db():
         },
         {
             "id": "marketing",
-            "name": "Marketing & Sales",
+            "name": "Marketing Department",
             "description": "Drives brand marketing campaigns, customer NPS feedback analysis, product launches, & lead conversion.",
             "image": "",
             "status": "Active",
@@ -117,8 +117,18 @@ def initialize_departments_db():
             "updatedAt": now_iso,
         },
         {
+            "id": "general",
+            "name": "General Company Information",
+            "description": "General company policy guidelines, workplace tools, office facilities, & administrative operations.",
+            "image": "",
+            "status": "Active",
+            "createdBy": "root",
+            "createdAt": now_iso,
+            "updatedAt": now_iso,
+        },
+        {
             "id": "employee",
-            "name": "General / Operations",
+            "name": "Employee Workspace",
             "description": "General company policy guidelines, workplace tools, office facilities, & administrative operations.",
             "image": "",
             "status": "Active",
@@ -128,7 +138,12 @@ def initialize_departments_db():
         },
     ]
 
-    col.insert_many(default_departments)
+    for dept in default_departments:
+        col.update_one(
+            {"id": dept["id"]},
+            {"$setOnInsert": dept},
+            upsert=True,
+        )
 
 
 def load_all_departments() -> list[DepartmentRecord]:
@@ -147,11 +162,18 @@ def load_all_departments() -> list[DepartmentRecord]:
 
 
 def get_department_by_id(dept_id: str) -> Optional[DepartmentRecord]:
+    if not dept_id:
+        return None
     col = get_departments_collection()
     if col.count_documents({}) == 0:
         initialize_departments_db()
 
-    doc = col.find_one({"id": dept_id})
+    clean_id = str(dept_id).strip().lower()
+    doc = col.find_one({"id": clean_id})
+    if not doc and clean_id.endswith("_data"):
+        doc = col.find_one({"id": clean_id[:-5]})
+    if not doc and not clean_id.endswith("_data"):
+        doc = col.find_one({"id": f"{clean_id}_data"})
     if not doc:
         return None
     return DepartmentRecord.from_dict(doc)

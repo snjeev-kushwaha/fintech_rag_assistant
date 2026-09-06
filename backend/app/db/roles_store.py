@@ -69,7 +69,7 @@ class RoleRecord:
 
 
 def initialize_roles_db():
-    """Seed default enterprise roles into MongoDB if not already present."""
+    """Seed default enterprise root role into MongoDB if not already present."""
     now_iso = datetime.now(timezone.utc).isoformat()
     default_roles = [
         {
@@ -85,78 +85,6 @@ def initialize_roles_db():
             ],
             "color": "#ef4444",
             "is_system": True,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "finance",
-            "name": "Finance Team",
-            "description": "You have access to: Financial reports, marketing expense budgets, equipment procurement costs, and employee reimbursement data. You also have access to general company information.",
-            "allowed_collections": ["finance", "general"],
-            "color": "#22c55e",
-            "is_system": False,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "marketing",
-            "name": "Marketing Team",
-            "description": "You have access to: Campaign performance data, customer feedback & NPS, and sales metrics. You also have access to general company information.",
-            "allowed_collections": ["marketing", "general"],
-            "color": "#f97316",
-            "is_system": False,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "hr",
-            "name": "HR Team",
-            "description": "You have access to: Employee records & directory, attendance records, payroll data, and performance reviews. You also have access to general company information.",
-            "allowed_collections": ["hr_data", "general"],
-            "color": "#a855f7",
-            "is_system": False,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "engineering",
-            "name": "Engineering Department",
-            "description": "You have access to: Technical architecture documentation, software development processes and CI/CD practices, and operational guidelines & runbooks. You also have access to general company information.",
-            "allowed_collections": ["engineering", "general"],
-            "color": "#3b82f6",
-            "is_system": False,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "executive",
-            "name": "C-Level Executive",
-            "description": "You have FULL ACCESS to all company data including: Financial reports, marketing data, HR records, engineering documentation, and general company information.",
-            "allowed_collections": [
-                "finance",
-                "marketing",
-                "hr_data",
-                "engineering",
-                "general",
-            ],
-            "color": "#eab308",
-            "is_system": False,
-            "createdBy": "system",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "employee",
-            "name": "Employee",
-            "description": "You have access to: General company information only — company policies, events, and FAQs. Sensitive departmental data requires specific role permissions.",
-            "allowed_collections": ["general"],
-            "color": "#94a3b8",
-            "is_system": False,
             "createdBy": "system",
             "createdAt": now_iso,
             "updatedAt": now_iso,

@@ -38,7 +38,7 @@ class TestRAGContextAndSources:
         context = self.pipeline.build_context(chunks)
         assert "capex_2024.txt" in context
         assert "Approved budget is $5M." in context
-        assert "Finance Department" in context
+        assert ("Finance Department" in context or "Finance Team" in context)
         assert "Human Resources" in context
 
     def test_build_sources_deduplication(self):

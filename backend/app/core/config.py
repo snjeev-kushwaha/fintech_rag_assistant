@@ -26,7 +26,8 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "finsolve-super-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
-    root_password: str = "root123"
+    root_username: str
+    root_password: str
 
     # ── Vector Store ───────────────────────────────────────────────────────────
     chroma_persist_dir: str = str(CHROMA_DIR)

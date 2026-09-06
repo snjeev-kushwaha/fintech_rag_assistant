@@ -8,7 +8,7 @@ import google.generativeai as genai
 
 from backend.app.core.config import settings
 from backend.app.models.schemas import SourceDocument
-from backend.app.core.rbac import get_allowed_collections, COLLECTION_LABELS
+from backend.app.core.rbac import get_allowed_collections, get_collection_label, COLLECTION_LABELS
 from backend.app.db.vector_store import query_collections
 from backend.app.db.roles_store import get_role_by_id
 
@@ -192,7 +192,7 @@ class RAGPipeline:
             source = chunk["source_file"]
             dept = chunk["department"]
             content = chunk["content"]
-            source_label = f"{source} ({COLLECTION_LABELS.get(dept, dept)})"
+            source_label = f"{source} ({get_collection_label(dept)})"
             context_parts.append(f"--- Relevant Snippet {i}: {source_label} ---\n{content}\n")
 
         return "\n".join(context_parts)
@@ -225,7 +225,7 @@ class RAGPipeline:
             extractive_passages = []
             for i, chunk in enumerate(chunks[:3], 1):
                 source = chunk.get("source_file", "Document")
-                dept_label = COLLECTION_LABELS.get(chunk.get("department"), chunk.get("department", ""))
+                dept_label = get_collection_label(chunk.get("department", ""))
                 extractive_passages.append(
                     f"**From {source} ({dept_label}):**\n{chunk['content'].strip()}"
                 )
@@ -314,7 +314,7 @@ class RAGPipeline:
                 sources.append(
                     SourceDocument(
                         source_file=chunk["source_file"],
-                        department=COLLECTION_LABELS.get(chunk["department"], chunk["department"]),
+                        department=get_collection_label(chunk["department"]),
                         content_preview=preview,
                     )
                 )
