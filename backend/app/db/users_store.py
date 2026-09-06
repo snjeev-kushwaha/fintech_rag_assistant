@@ -57,10 +57,6 @@ def _hash_raw_password(password: str) -> str:
 
 def initialize_users_db():
     """Seed the local MongoDB database with default users if empty."""
-    col = get_users_collection()
-    if col.count_documents({}) > 0:
-        return
-
     root_pwd = getattr(settings, "root_password", "root123")
     initial_users = [
         {
@@ -121,7 +117,13 @@ def initialize_users_db():
         },
     ]
 
-    col.insert_many(initial_users)
+    col = get_users_collection()
+    for user_data in initial_users:
+        col.update_one(
+            {"username": user_data["username"]},
+            {"$setOnInsert": user_data},
+            upsert=True,
+        )
 
 
 def load_all_users() -> dict[str, UserRecord]:

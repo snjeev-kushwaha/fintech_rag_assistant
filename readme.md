@@ -172,7 +172,10 @@ pip install -r requirements.txt
 # 4. Ingest starter department knowledge files
 python scripts/ingest_data.py
 
-# 5. Start the FastAPI backend server
+# 5. Run automated test suite (51 tests)
+pytest -v
+
+# 6. Start the FastAPI backend server
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 * Backend API: **`http://127.0.0.1:8000`**
