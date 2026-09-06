@@ -17,7 +17,7 @@ CHROMA_DIR = BACKEND_DIR / "chroma_db"
 class Settings(BaseSettings):
     # ── LLM ───────────────────────────────────────────────────────────────────
     gemini_api_key: str = "your_gemini_api_key_here"
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-3.6-flash"
     llm_provider: str = "auto"
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "llama3"

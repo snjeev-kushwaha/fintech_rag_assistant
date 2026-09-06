@@ -8,6 +8,13 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
+# Silence ChromaDB telemetry version mismatch warning
+try:
+    import chromadb.telemetry.product.posthog
+    chromadb.telemetry.product.posthog.Posthog.capture = lambda self, event: None
+except Exception:
+    pass
+
 import chromadb
 from sentence_transformers import SentenceTransformer
 
@@ -30,7 +37,6 @@ _embedding_model: Optional[SentenceTransformer] = None
 def get_embedding_model() -> SentenceTransformer:
     global _embedding_model
     if _embedding_model is None:
-        print(f"[VectorStore] Loading embedding model: {settings.embedding_model}")
         _embedding_model = SentenceTransformer(settings.embedding_model)
     return _embedding_model
 
@@ -57,7 +63,6 @@ def get_chroma_client() -> chromadb.PersistentClient:
     global _chroma_client
     if _chroma_client is None:
         CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-        print(f"[VectorStore] Connecting to ChromaDB at: {CHROMA_DIR}")
         _chroma_client = chromadb.PersistentClient(path=str(CHROMA_DIR))
     return _chroma_client
 

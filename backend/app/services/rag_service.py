@@ -14,18 +14,74 @@ from backend.app.db.vector_store import query_collections
 
 # ── Gemini Validation Helper ──────────────────────────────────────────────────
 
-def check_gemini_validity(api_key: str, model_name: str) -> bool:
-    """Check if Google API key is configured, valid, and has available quota."""
+SUPPORTED_GEMINI_FALLBACKS = [
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+    "gemini-3.8-flash",
+    "gemini-2.5-flash",
+]
+
+
+def resolve_working_gemini_model(api_key: str, preferred_model: str) -> tuple[bool, str]:
+    """
+    Check if Google API key is valid and resolve a working model.
+    Falls back gracefully if the preferred model is deprecated or unavailable.
+    Returns (is_valid, working_model_name).
+    """
     if not api_key or "your_gemini" in api_key or api_key.strip() == "":
-        return False
+        return False, preferred_model
+
+    candidates = [preferred_model]
+    for fallback in SUPPORTED_GEMINI_FALLBACKS:
+        if fallback not in candidates:
+            candidates.append(fallback)
+
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        model.generate_content("ping", generation_config=genai.GenerationConfig(max_output_tokens=1))
-        return True
     except Exception as e:
-        print(f"[RAG] Google Gemini API check: {e}")
-        return False
+        print(f"[RAG] Google Gemini configuration error: {e}")
+        return False, preferred_model
+
+    for model_name in candidates:
+        try:
+            model = genai.GenerativeModel(model_name)
+            model.generate_content("ping", generation_config=genai.GenerationConfig(max_output_tokens=1))
+            if model_name != preferred_model:
+                print(f"[RAG] Preferred model '{preferred_model}' unavailable; auto-resolved to: {model_name}")
+            return True, model_name
+        except Exception:
+            pass
+
+    # Dynamic fallback: query Google's live list_models() for active text generation models
+    try:
+        live_models = [
+            m.name.replace("models/", "")
+            for m in genai.list_models()
+            if "generateContent" in m.supported_generation_methods
+            and "flash" in m.name
+            and "tts" not in m.name
+            and "image" not in m.name
+        ]
+        for model_name in live_models:
+            if model_name in candidates:
+                continue
+            try:
+                model = genai.GenerativeModel(model_name)
+                model.generate_content("ping", generation_config=genai.GenerationConfig(max_output_tokens=1))
+                print(f"[RAG] Dynamic discovery: automatically resolved working Gemini model: {model_name}")
+                return True, model_name
+            except Exception:
+                continue
+    except Exception as e:
+        print(f"[RAG] Dynamic model discovery notice: {e}")
+
+    return False, preferred_model
+
+
+def check_gemini_validity(api_key: str, model_name: str) -> bool:
+    """Check if Google API key is configured, valid, and has available quota."""
+    is_valid, _ = resolve_working_gemini_model(api_key, model_name)
+    return is_valid
 
 
 def get_available_ollama_model() -> str:
@@ -88,7 +144,7 @@ ROLE_DISPLAY_NAMES = {
 
 class RAGPipeline:
     def __init__(self):
-        # 1. Check local Ollama container availability (DEFAULT provider)
+        # 1. Check local Ollama container availability
         self.ollama_available = False
         self.ollama_model = settings.ollama_model
         try:
@@ -96,15 +152,16 @@ class RAGPipeline:
             if res.status_code == 200:
                 self.ollama_available = True
                 self.ollama_model = get_available_ollama_model()
-                print(f"[RAG] Local Ollama container active. Resolved model: {self.ollama_model}")
-        except Exception as e:
-            print(f"[RAG] Local Ollama container check: {e}")
+        except Exception:
+            pass
 
-        # 2. Check if valid Google API key is configured
-        self.gemini_available = check_gemini_validity(settings.gemini_api_key, settings.gemini_model)
+        # 2. Check if valid Google API key is configured and resolve working model
+        self.gemini_model_name = settings.gemini_model
+        self.gemini_available, self.gemini_model_name = resolve_working_gemini_model(
+            settings.gemini_api_key, settings.gemini_model
+        )
         if self.gemini_available:
-            self._gemini_model = genai.GenerativeModel(settings.gemini_model)
-            print(f"[RAG] Valid Google Gemini API Key configured: {settings.gemini_model}")
+            self._gemini_model = genai.GenerativeModel(self.gemini_model_name)
 
         # 3. Determine Provider Routing
         pref = getattr(settings, "llm_provider", "auto").lower()
@@ -118,11 +175,9 @@ class RAGPipeline:
             else:
                 self.preferred_provider = "ollama"
 
-        print(f"[RAG] Active Provider: {self.preferred_provider.upper()} (Model: {self._get_active_model_name()})")
-
     def _get_active_model_name(self) -> str:
         if self.preferred_provider == "gemini" and self.gemini_available:
-            return settings.gemini_model
+            return self.gemini_model_name
         return self.ollama_model
 
     def retrieve(

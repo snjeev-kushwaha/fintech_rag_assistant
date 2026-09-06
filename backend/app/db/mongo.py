@@ -35,7 +35,6 @@ def ensure_db_indexes():
         db["departments"].create_index("id", unique=True)
         db["chat_sessions"].create_index([("username", 1), ("updated_at", -1)])
         _indexes_initialized = True
-        print("[MongoDB] Security & performance indexes initialized.")
     except Exception as e:
         print(f"[MongoDB] Index initialization notice: {e}")
 
