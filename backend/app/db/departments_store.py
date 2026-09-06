@@ -59,91 +59,12 @@ class DepartmentRecord:
 
 
 def initialize_departments_db():
-    """Seed default corporate departments into MongoDB if empty."""
+    """Ensure departments collection indexes exist in MongoDB."""
     col = get_departments_collection()
-    if col.count_documents({}) > 0:
-        return
-
-    now_iso = datetime.now(timezone.utc).isoformat()
-    default_departments = [
-        {
-            "id": "finance",
-            "name": "Finance Department",
-            "description": "Manages corporate financial planning, budgets, expense limits, and quarterly revenue reporting.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "marketing",
-            "name": "Marketing Department",
-            "description": "Drives brand marketing campaigns, customer NPS feedback analysis, product launches, & lead conversion.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "hr",
-            "name": "Human Resources",
-            "description": "Handles employee onboarding, headcount tracking, salary brackets, performance reviews, & HR policies.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "engineering",
-            "name": "Engineering Department",
-            "description": "Builds core microservices, CI/CD deployment pipelines, system architecture, & manages P0 production alerts.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "executive",
-            "name": "Executive Board",
-            "description": "C-Level strategic decision making, corporate governance, enterprise risk oversight, & executive metrics.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "general",
-            "name": "General Company Information",
-            "description": "General company policy guidelines, workplace tools, office facilities, & administrative operations.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-        {
-            "id": "employee",
-            "name": "Employee Workspace",
-            "description": "General company policy guidelines, workplace tools, office facilities, & administrative operations.",
-            "image": "",
-            "status": "Active",
-            "createdBy": "root",
-            "createdAt": now_iso,
-            "updatedAt": now_iso,
-        },
-    ]
-
-    for dept in default_departments:
-        col.update_one(
-            {"id": dept["id"]},
-            {"$setOnInsert": dept},
-            upsert=True,
-        )
+    try:
+        col.create_index("id", unique=True)
+    except Exception:
+        pass
 
 
 def load_all_departments() -> list[DepartmentRecord]:
