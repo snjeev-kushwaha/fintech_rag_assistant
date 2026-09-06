@@ -19,12 +19,15 @@ from backend.app.core.security_utils import (
     safe_resolve_data_path,
     validate_file_size,
 )
+import re
 from backend.app.models.schemas import (
     DepartmentCreate,
     DepartmentUpdate,
     DepartmentResponse,
+    UserAdminResponse,
     UserInfo,
 )
+from backend.app.db.mongo import get_users_collection
 from backend.app.db.departments_store import (
     load_all_departments,
     get_department_by_id,
@@ -195,6 +198,41 @@ async def delete_department(dept_id: str, admin: UserInfo = Depends(require_root
 # ══════════════════════════════════════════════════════════════════════════════
 # DEPARTMENT KNOWLEDGE DOCUMENTS & FILE SYNCHRONIZATION ENDPOINTS
 # ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/{dept_id}/users", response_model=list[UserAdminResponse])
+async def get_department_users(
+    dept_id: str,
+    user: UserInfo = Depends(get_current_user),
+):
+    """
+    List colleagues/team members belonging to a specific department.
+    Accessible to authenticated platform users so colleagues can view their team directory.
+    """
+    clean_dept_id = validate_department_id(dept_id)
+    dept = get_department_by_id(clean_dept_id)
+    if not dept:
+        raise HTTPException(status_code=404, detail=f"Department '{dept_id}' not found.")
+
+    users_col = get_users_collection()
+    docs = users_col.find({
+        "$or": [
+            {"departmentId": clean_dept_id},
+            {"role": clean_dept_id},
+            {"role": {"$regex": f"^{re.escape(clean_dept_id)}$", "$options": "i"}},
+            {"departmentId": {"$regex": f"^{re.escape(clean_dept_id)}$", "$options": "i"}},
+        ]
+    })
+    return [
+        UserAdminResponse(
+            username=d["username"],
+            role=d.get("role", clean_dept_id),
+            full_name=d.get("full_name", d["username"]),
+            is_active=d.get("is_active", True),
+            departmentId=d.get("departmentId", clean_dept_id),
+        )
+        for d in docs
+    ]
+
 
 @router.get("/{dept_id}/files")
 async def get_department_files(dept_id: str, user: UserInfo = Depends(get_current_user)):

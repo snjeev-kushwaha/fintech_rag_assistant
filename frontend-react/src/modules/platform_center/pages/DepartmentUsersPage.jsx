@@ -2,8 +2,7 @@
  * DepartmentUsersPage.jsx — View Department Colleagues & Team Members
  */
 import { useState, useEffect } from 'react';
-import { apiGetUsers } from '../../../services/userService';
-import { apiGetDepartments } from '../../../services/departmentService';
+import { apiGetDepartments, apiGetDepartmentUsers } from '../../../services/departmentService';
 import LoadingSpinner from '../../../shared/components/LoadingSpinner';
 import ErrorBanner from '../../../shared/components/ErrorBanner';
 import styles from '../styles/platform_center.module.css';
@@ -17,16 +16,23 @@ export default function DepartmentUsersPage({ auth, logout }) {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
+      setError('');
       try {
-        const [allUsers, depts] = await Promise.all([
-          apiGetUsers(auth.token),
-          apiGetDepartments(auth.token),
-        ]);
-        const dept = depts.find((d) => d.id === auth.role) || { name: auth.displayName || auth.role, id: auth.role };
+        const depts = await apiGetDepartments(auth.token);
+        const userRole = (auth.role || '').toLowerCase();
+        const userDeptId = (auth.departmentId || '').toLowerCase();
+
+        const dept = depts.find(
+          (d) =>
+            (d.id || '').toLowerCase() === userRole ||
+            (d.id || '').toLowerCase() === userDeptId ||
+            (d.name || '').toLowerCase().includes(userRole)
+        ) || { name: auth.displayName || auth.role, id: auth.role };
+
         setDepartmentInfo(dept);
 
-        const myTeam = allUsers.filter((u) => u.role === auth.role || u.departmentId === auth.role);
-        setUsers(myTeam);
+        const teamMembers = await apiGetDepartmentUsers(dept.id, auth.token);
+        setUsers(teamMembers);
       } catch (err) {
         if (err.message === 'SESSION_EXPIRED') logout();
         else setError(err.message || 'Failed to load department team.');
@@ -70,6 +76,11 @@ export default function DepartmentUsersPage({ auth, logout }) {
               </div>
             </div>
           ))}
+          {users.length === 0 && (
+            <div style={{ color: 'var(--text-secondary, #94a3b8)', padding: '24px', gridColumn: '1 / -1' }}>
+              No other team members currently assigned to this department.
+            </div>
+          )}
         </div>
       )}
     </div>

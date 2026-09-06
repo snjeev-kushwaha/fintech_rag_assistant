@@ -109,3 +109,15 @@ export async function apiDeleteDepartmentFile(deptId, filename, token) {
   }
   return res.json();
 }
+
+export async function apiGetDepartmentUsers(deptId, token) {
+  const res = await fetch(`${BASE_URL}/admin/departments/${encodeURIComponent(deptId)}/users`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    if (res.status === 401) throw new Error('SESSION_EXPIRED');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || 'Failed to load department team');
+  }
+  return res.json();
+}
